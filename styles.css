@@ -242,7 +242,45 @@ html, body {
   align-items: center;
   width: 100%;
   padding-bottom: 0.5em;
+  padding-right: 200px;
   background: linear-gradient(transparent, rgba(0,0,0,0.3));
+}
+
+/* Game Log */
+#game-log {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 180px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.55);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: clamp(0.55rem, 0.75vw, 0.65rem);
+  line-height: 1.4;
+  font-family: inherit;
+  backdrop-filter: blur(2px);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+#game-log .log-entry {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.85;
+}
+
+#game-log .log-turn {
+  opacity: 0.5;
+  margin-right: 2px;
+}
+
+#game-log .log-player {
+  color: var(--gold);
+  margin-right: 2px;
 }
 
 #player-info {

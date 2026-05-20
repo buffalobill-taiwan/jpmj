@@ -20,6 +20,7 @@ class Game {
     this.riichiDeclaredThisTurn = false;
     this.lastActionWasRiichi = false;
     this.discardAfterRiichi = null;
+    this.log = [];
   }
 
   get maxRounds() {
@@ -130,6 +131,7 @@ class Game {
         p.hand.push(tile);
         p.hand = Tile.sortTiles(p.hand);
         p.lastDraw = tile;
+        this.addLog(this.currentPlayer, '摸', tile.name);
         this.turnCount++;
 
         if (this.checkTsumo(this.currentPlayer)) {
@@ -164,7 +166,9 @@ class Game {
       }
 
       if (this.phase === 'call_pending') {
-        return this.processCallPhase();
+        const needHuman = this.processCallPhase();
+        if (needHuman) return;
+        continue;
       }
 
       if (this.phase === 'rinshan') {
@@ -217,6 +221,8 @@ class Game {
     this.lastDiscard = tile;
     this.lastDiscardPlayer = playerIdx;
     this.riichiDeclaredThisTurn = false;
+
+    this.addLog(playerIdx, '打', tile.name + (p.isRiichi ? '（立直）' : ''));
 
     for (let i = 0; i < 4; i++) {
       if (this.players[i].ippatsuRound >= 0 && i !== playerIdx) {
@@ -293,7 +299,7 @@ class Game {
     if (humanCalls.length > 0) {
       this.availableActions = humanCalls;
       this.availableActions.push({ type: 'pass' });
-      return;
+      return true;
     }
 
     const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
@@ -301,10 +307,13 @@ class Game {
 
     if (chosenCall) {
       this.executeCall(chosenCall);
-      return;
+      if (this.phase === 'discard' && this.players[this.currentPlayer].isHuman) return true;
+      if (this.phase === 'rinshan' && this.players[this.currentPlayer].isHuman) return true;
+      return false;
     }
 
     this.advanceTurn();
+    return false;
   }
 
   humanCall(callChoice) {
@@ -337,6 +346,7 @@ class Game {
     }
 
     if (type === 'pon') {
+      this.addLog(playerIdx, 'ポン', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
       const removed = [];
       let n = 2;
       const newHand = [];
@@ -367,6 +377,7 @@ class Game {
     }
 
     if (type === 'chi') {
+      this.addLog(playerIdx, 'チー', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
       const chiTileSet = call.chiSets[0];
       const removed = [];
       const newHand = [];
@@ -405,6 +416,7 @@ class Game {
     }
 
     if (type === 'kan' && call.isCalled) {
+      this.addLog(playerIdx, 'カン', tile.name);
       const removed = [];
       let n = 3;
       const newHand = [];
@@ -422,12 +434,23 @@ class Game {
         if (this.players[i].ippatsuRound >= 0) this.players[i].ippatsuRound = -1;
       }
       this.phase = 'rinshan';
-      this.advance();
       return;
     }
   }
 
+  addLog(playerIdx, action, detail) {
+    const p = this.players[playerIdx];
+    this.log.push({
+      turn: this.turnCount,
+      player: p ? p.name : '?',
+      action,
+      detail: detail || '',
+    });
+    if (this.log.length > 100) this.log.shift();
+  }
+
   advanceTurn() {
+    this.addLog(this.currentPlayer, '→', this.players[(this.currentPlayer + 1) % 4].name);
     this.lastDiscard = null;
     this.lastDiscardPlayer = -1;
     this.availableCalls = [];
@@ -452,6 +475,7 @@ class Game {
     if (!checkTenpai(testHand, p.melds)) return;
 
     p.isRiichi = true;
+    this.addLog(this.currentPlayer, '立直', tile.name);
     this.executeDiscard(this.currentPlayer, tileIdx);
     if (this.phase === 'call_pending') {
       p.ippatsuRound = this.turnCount;
@@ -532,6 +556,7 @@ class Game {
 
   executeWin(playerIdx, winType, tile) {
     const p = this.players[playerIdx];
+    this.addLog(playerIdx, winType === 'tsumo' ? 'ツモ' : 'ロン', tile.name);
     const handForEval = winType === 'tsumo'
       ? removeTiles(p.hand, tile.key(), 1)
       : p.hand;

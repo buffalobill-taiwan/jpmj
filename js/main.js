@@ -88,6 +88,7 @@ function renderGame() {
   renderOpponent('opponent-left', 2);
   renderOpponent('opponent-right', 3);
   renderControls();
+  renderLog();
 }
 
 function renderCenterInfo() {
@@ -473,6 +474,18 @@ function showFinalResult() {
     game = null;
     renderTitleScreen();
   });
+}
+
+// ===== Game Log =====
+
+function renderLog() {
+  const el = document.getElementById('game-log');
+  if (!el) return;
+  const entries = game.log;
+  el.innerHTML = entries.slice(-25).map(e =>
+    `<div class="log-entry"><span class="log-turn">${e.turn}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}</div>`
+  ).join('');
+  el.scrollTop = el.scrollHeight;
 }
 
 // ===== Bootstrap =====
