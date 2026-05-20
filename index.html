@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>日本麻將</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="title-screen">
+  <h1>日本麻將</h1>
+  <div class="title-tiles">🀀🀁🀂🀃🀄🀅🀆🀇🀎🀙</div>
+
+  <div class="option-group">
+    <label>對戰長度</label>
+    <div class="option-row">
+      <button class="option-btn length-btn selected" data-value="east" onclick="document.getElementById('len-east').checked=true;setup.length='east'">東風戰</button>
+      <button class="option-btn length-btn" data-value="half" onclick="document.getElementById('len-half').checked=true;setup.length='half'">半莊戰</button>
+      <button class="option-btn length-btn" data-value="full" onclick="document.getElementById('len-full').checked=true;setup.length='full'">一莊戰</button>
+    </div>
+    <div style="display:none">
+      <input type="radio" name="length" id="len-east" value="east" checked>
+      <input type="radio" name="length" id="len-half" value="half">
+      <input type="radio" name="length" id="len-full" value="full">
+    </div>
+  </div>
+
+  <div class="option-group">
+    <label>對手強度</label>
+    <div class="option-row">
+      <div><span style="font-size:0.8em">CPU1</span><br>
+        <select class="difficulty-select" data-player="0">
+          <option value="expert">高手</option>
+          <option value="normal" selected>一般人</option>
+          <option value="beginner">初學者</option>
+        </select>
+      </div>
+      <div><span style="font-size:0.8em">CPU2</span><br>
+        <select class="difficulty-select" data-player="1">
+          <option value="expert">高手</option>
+          <option value="normal" selected>一般人</option>
+          <option value="beginner">初學者</option>
+        </select>
+      </div>
+      <div><span style="font-size:0.8em">CPU3</span><br>
+        <select class="difficulty-select" data-player="2">
+          <option value="expert">高手</option>
+          <option value="normal" selected>一般人</option>
+          <option value="beginner">初學者</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <button id="start-btn">開始遊戲</button>
+</div>
+
+<div id="game-screen">
+  <div id="table">
+    <div id="opponent-top" class="opponent-area">
+      <div class="player-name">CPU1</div>
+      <div class="player-score">25000点</div>
+      <div class="tiles-row"></div>
+      <div class="opponent-melds"></div>
+      <div class="opponent-discards"></div>
+    </div>
+    <div id="opponent-left" class="opponent-area">
+      <div class="player-name">CPU2</div>
+      <div class="player-score">25000点</div>
+      <div class="tiles-row"></div>
+      <div class="opponent-melds"></div>
+      <div class="opponent-discards"></div>
+    </div>
+    <div id="opponent-right" class="opponent-area">
+      <div class="player-name">CPU3</div>
+      <div class="player-score">25000点</div>
+      <div class="tiles-row"></div>
+      <div class="opponent-melds"></div>
+      <div class="opponent-discards"></div>
+    </div>
+
+    <div id="center-info">
+      <div class="round-label">東一局</div>
+      <div class="wall-count">殘牌 122 張</div>
+      <div id="dora-area"></div>
+    </div>
+
+    <div id="player-area">
+      <div id="player-info">
+        <span class="player-name">あなた (東)</span>
+        <span class="player-score">25000点</span>
+      </div>
+      <div id="player-melds"></div>
+      <div id="player-discards"></div>
+      <div id="player-hand"></div>
+      <div id="controls"></div>
+    </div>
+  </div>
+</div>
+
+<div id="round-result">
+  <div id="round-result-content"></div>
+</div>
+
+<div id="result-screen">
+  <div id="result-content">
+    <h2>最終結果</h2>
+    <ul id="rank-list" class="rank-list"></ul>
+    <button id="back-btn">回到標題</button>
+  </div>
+</div>
+
+<script src="js/tiles.js"></script>
+<script src="js/wall.js"></script>
+<script src="js/yaku.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
