@@ -381,7 +381,7 @@ html, body {
 /* Controls */
 #controls {
   position: fixed;
-  right: 14px;
+  right: 38%;
   bottom: 7rem;
   display: flex;
   gap: 6px;
