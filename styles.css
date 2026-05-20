@@ -152,7 +152,7 @@ html, body {
 }
 
 .opponent-area .tile-char {
-  font-size: clamp(1rem, 1.8vw, 1.6rem);
+  font-size: clamp(1.3rem, 2.2vw, 1.8rem);
   opacity: 0.85;
 }
 
@@ -188,7 +188,7 @@ html, body {
 }
 
 .opponent-discards .tile-char {
-  font-size: clamp(0.7rem, 1.2vw, 1rem);
+  font-size: clamp(1.1rem, 1.8vw, 1.5rem);
   opacity:0.6;
 }
 
@@ -272,7 +272,7 @@ html, body {
 }
 
 #dora-area .tile-char {
-  font-size: clamp(1rem, 1.5vw, 1.3rem);
+  font-size: clamp(1.2rem, 2vw, 1.8rem);
   border:1px solid var(--tile-border);
   border-radius:3px;
   background: var(--tile-back);
@@ -362,7 +362,7 @@ html, body {
 }
 
 #player-melds .tile-char {
-  font-size: clamp(1.2rem, 2vw, 1.8rem);
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
 }
 
 #player-hand {
@@ -385,7 +385,7 @@ html, body {
 }
 
 #player-hand .tile-char {
-  font-size: clamp(1.8rem, 3.5vw, 3rem);
+  font-size: clamp(2.2rem, 4.5vw, 3.5rem);
   border: 1px solid var(--tile-border);
   border-radius: 4px;
   background: var(--tile-back);
@@ -429,7 +429,7 @@ html, body {
 }
 
 #player-discards .tile-char {
-  font-size: clamp(0.9rem, 1.5vw, 1.3rem);
+  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
   opacity:0.7;
 }
 
@@ -595,8 +595,8 @@ html, body {
 /* ===== Responsive ===== */
 
 @media (max-width: 768px) {
-  #player-hand .tile-char { font-size: clamp(1.4rem, 4.5vw, 2rem); }
+  #player-hand .tile-char { font-size: clamp(1.8rem, 5.5vw, 2.5rem); }
   #controls button { padding: 0.3em 0.7em; font-size: clamp(0.65rem, 2vw, 0.8rem); }
-  .opponent-area .tile-char { font-size: clamp(0.7rem, 2.5vw, 1rem); }
+  .opponent-area .tile-char { font-size: clamp(0.9rem, 3vw, 1.2rem); }
   #result-content { min-width: 260px; padding: 1.5em; }
 }

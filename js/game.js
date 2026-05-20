@@ -461,7 +461,10 @@ class Game {
     if (p.melds.length > 0) return;
     if (this.wall.getRemainingCount() < 4) return;
 
-    if (!checkTenpai(p.hand, p.melds)) return;
+    if (!p.hand.some((_, i) => {
+      const testHand = p.hand.filter((__, j) => j !== i);
+      return checkTenpai(testHand, p.melds);
+    })) return;
 
     const tile = p.hand[tileIdx];
     const testHand = p.hand.filter((_, i) => i !== tileIdx);

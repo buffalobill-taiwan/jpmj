@@ -210,14 +210,14 @@ function renderOpponent(areaId, playerIdx) {
     for (let i = 0; i < displayTiles; i++) {
       const span = document.createElement('span');
       span.className = 'tile-char';
-      span.textContent = '🀥';
+      span.textContent = '🀫';
       handDiv.appendChild(span);
     }
   } else {
     for (const t of p.hand) {
       const span = document.createElement('span');
       span.className = 'tile-char';
-      span.textContent = '🀥';
+      span.textContent = '🀫';
       handDiv.appendChild(span);
     }
   }
@@ -302,7 +302,7 @@ function renderControls() {
         ctrl.appendChild(btn);
       }
     }
-  } else if (game.phase === 'discard' || game.phase === 'dealer_first_discard') {
+  } else if ((game.phase === 'discard' || game.phase === 'dealer_first_discard') && game.currentPlayer === 0) {
     const p = game.players[0];
     if (p.isRiichi) {
       const btn = document.createElement('button');
@@ -311,7 +311,11 @@ function renderControls() {
       btn.disabled = true;
       ctrl.appendChild(btn);
     } else if (p.melds.length === 0 && game.wall.getRemainingCount() >= 4) {
-      if (checkTenpai(p.hand, p.melds)) {
+      const canRiichi = p.hand.some((_, i) => {
+        const testHand = p.hand.filter((__, j) => j !== i);
+        return checkTenpai(testHand, p.melds);
+      });
+      if (canRiichi) {
         const btn = document.createElement('button');
         btn.className = 'primary';
         btn.textContent = '立直';
