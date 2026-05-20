@@ -28,6 +28,7 @@ class Wall {
       players[p].hand.push(this.tiles[idx++]);
     }
     players[0].hand.push(this.tiles[idx++]);
+    this.dealerExtraTile = this.tiles[idx - 1];
     this.drawIndex = idx;
     this.doraCount = 1;
     this.rinshanIndex = 135;

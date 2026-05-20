@@ -91,6 +91,7 @@ class Game {
     for (const p of this.players) {
       p.hand = Tile.sortTiles(p.hand);
     }
+    this.players[this.dealerIndex].lastDraw = this.wall.dealerExtraTile;
     this.currentPlayer = this.dealerIndex;
     this.lastDiscard = null;
     this.lastDiscardPlayer = -1;
