@@ -243,7 +243,7 @@ class Game {
 
       const ronCheck = evaluateHand(hand, p.melds, tile, 'ron', this.getGameState(pIdx, tile, 'ron'));
       if (ronCheck) {
-        calls.push({ type: 'ron', playerIdx: pIdx });
+        calls.push({ type: 'ron', playerIdx: pIdx, tile });
       }
 
       const handCounts = getCounts(hand);
