@@ -19,7 +19,7 @@
 html, body {
   width:100%; height:100%;
   overflow:hidden;
-  font-family: 'Noto Sans TC','Noto Sans JP','Microsoft JhengHei','PingFang TC',sans-serif;
+  font-family: 'Noto Sans JP','Noto Sans TC','Microsoft JhengHei','PingFang TC',sans-serif;
   background: var(--table-dark);
   color: var(--text-light);
   user-select: none;
