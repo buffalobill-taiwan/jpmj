@@ -141,29 +141,41 @@ function renderPlayerArea() {
   const handDiv = document.getElementById('player-hand');
   handDiv.innerHTML = '';
 
-  const displayHand = p.hand;
-  for (let i = 0; i < displayHand.length; i++) {
+  const drawnTile = p.lastDraw;
+  const drawnInHand = p.hand.findIndex(t => t.equals(drawnTile));
+  const displayOrder = [];
+  for (let i = 0; i < p.hand.length; i++) {
+    if (i !== drawnInHand) displayOrder.push(i);
+  }
+  if (drawnInHand >= 0) displayOrder.push(drawnInHand);
+
+  for (let vi = 0; vi < displayOrder.length; vi++) {
+    const actualIdx = displayOrder[vi];
+    const t = p.hand[actualIdx];
+    const isDrawn = actualIdx === drawnInHand;
+
     const slot = document.createElement('div');
     slot.className = 'tile-slot';
-    if (i === selectedTile) slot.classList.add('selected');
+    if (actualIdx === selectedTile) slot.classList.add('selected');
+
+    if (isDrawn) {
+      const gap = document.createElement('div');
+      gap.className = 'tile-gap';
+      handDiv.appendChild(gap);
+      slot.classList.add('last-draw-slot');
+    }
 
     const span = document.createElement('span');
     span.className = 'tile-char';
-
-    if (p.isRiichi && p.lastDraw && displayHand[i].equals(p.lastDraw)) {
-      span.classList.add('last-draw');
-    }
-
-    span.textContent = displayHand[i].char;
+    span.textContent = t.char;
     slot.appendChild(span);
 
     const label = document.createElement('div');
     label.className = 'tile-label';
-    label.textContent = displayHand[i].name;
+    label.textContent = t.name;
     slot.appendChild(label);
 
-    slot.dataset.idx = i;
-    slot.addEventListener('click', () => onTileClick(i));
+    slot.addEventListener('click', () => onTileClick(actualIdx));
     handDiv.appendChild(slot);
   }
 }

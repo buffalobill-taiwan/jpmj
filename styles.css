@@ -362,6 +362,16 @@ html, body {
   margin-top:1px;
 }
 
+#player-hand .tile-gap {
+  width: 1.5em;
+  flex-shrink: 0;
+}
+
+#player-hand .last-draw-slot .tile-char {
+  border-color: var(--gold);
+  box-shadow: 0 0 6px var(--gold), 0 2px 4px var(--shadow);
+}
+
 .last-draw {
   border-color: var(--gold) !important;
   box-shadow: 0 0 6px var(--gold) !important;
