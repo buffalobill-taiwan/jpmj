@@ -228,6 +228,7 @@ class Game {
     this.phase = 'call_pending';
     this.availableActions = [];
     this.availableCalls = this.buildAvailableCalls(playerIdx, tile);
+    p.lastDraw = null;
   }
 
   buildAvailableCalls(discardPlayerIdx, tile) {
@@ -444,6 +445,7 @@ class Game {
     this.lastDiscardPlayer = -1;
     this.availableCalls = [];
     this.availableActions = [];
+    this.players[this.currentPlayer].lastDraw = null;
     this.currentPlayer = (this.currentPlayer + 1) % 4;
     this.phase = 'draw';
   }
