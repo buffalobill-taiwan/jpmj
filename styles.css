@@ -227,7 +227,7 @@ html, body {
 
 /* Player area (bottom) */
 #player-area {
-  position:absolute;
+  position:relative;
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
@@ -380,10 +380,17 @@ html, body {
 
 /* Controls */
 #controls {
-  display:flex;
-  gap: 8px;
-  justify-content: center;
-  padding: 4px 0;
+  position: fixed;
+  right: 14px;
+  bottom: 7rem;
+  display: flex;
+  gap: 6px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+#controls > * {
+  pointer-events: auto;
 }
 
 #controls button {
