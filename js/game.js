@@ -349,6 +349,7 @@ class Game {
       }
       p.hand = newHand;
       p.melds.push({ type:'pon', tiles:[tile, tile, tile], open:true, from: this.lastDiscardPlayer });
+      if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;
       this.currentPlayer = playerIdx;
@@ -371,7 +372,7 @@ class Game {
 
     if (type === 'chi') {
       this.addLog(playerIdx, 'チー', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
-      const chiTileSet = call.chiSets[0];
+      const chiTileSet = call.chosenChiSet !== undefined ? call.chiSets[call.chosenChiSet] : call.chiSets[0];
       const newHand = [];
       const keepKeys = {};
       for (const ct of chiTileSet) {
@@ -388,6 +389,7 @@ class Game {
       }
       p.hand = newHand;
       p.melds.push({ type:'chi', tiles:chiTileSet, open:true, from: this.lastDiscardPlayer });
+      if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;
       this.currentPlayer = playerIdx;
@@ -417,6 +419,7 @@ class Game {
       }
       p.hand = newHand;
       p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:true, from: this.lastDiscardPlayer });
+      if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;
       this.wall.addDoraIndicator();

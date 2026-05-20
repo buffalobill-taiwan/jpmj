@@ -63,23 +63,15 @@ class Tile {
   }
 
   static fromString(str) {
-    const SHORT = { m:'man', p:'pin', s:'sou', z:'honor' };
-    const LONG  = { man:'man', pin:'pin', sou:'sou', honor:'honor' };
-    let suit = SHORT[str[0]];
-    let valueStr;
-    if (suit) {
-      valueStr = str.slice(1);
-    } else {
-      for (const [k, v] of Object.entries(LONG)) {
-        if (str.startsWith(k)) { suit = v; valueStr = str.slice(k.length); break; }
-      }
-    }
+    const val = parseInt(str[str.length - 1]);
+    if (isNaN(val)) return null;
+    const suitStr = str.slice(0, -1);
+    const suit = ({ m:'man', p:'pin', s:'sou', z:'honor' })[suitStr]
+             || ({ man:'man', pin:'pin', sou:'sou', honor:'honor' })[suitStr];
     if (!suit) return null;
-    const value = parseInt(valueStr);
-    if (isNaN(value)) return null;
-    if (suit === 'honor' && (value < 1 || value > 7)) return null;
-    if (suit !== 'honor' && (value < 1 || value > 9)) return null;
-    return new Tile(suit, value);
+    if (suit === 'honor' && (val < 1 || val > 7)) return null;
+    if (suit !== 'honor' && (val < 1 || val > 9)) return null;
+    return new Tile(suit, val);
   }
 
   static allTiles() {

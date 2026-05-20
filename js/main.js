@@ -148,7 +148,7 @@ function renderPlayerArea() {
   discardsDiv.innerHTML = '';
   for (const d of p.discards) {
     const span = document.createElement('span');
-    span.className = 'tile-char';
+    span.className = 'tile-char' + (d.called ? ' called' : '');
     span.textContent = d.char;
     discardsDiv.appendChild(span);
   }
@@ -195,7 +195,7 @@ function renderPlayerArea() {
   }
 }
 
-function renderOpponent(areaId, playerIdx) {
+function renderOpponent(areaId, playerIdx, reveal) {
   const area = document.getElementById(areaId);
   const p = game.players[playerIdx];
   if (!p) return;
@@ -205,21 +205,12 @@ function renderOpponent(areaId, playerIdx) {
 
   const handDiv = area.querySelector('.tiles-row');
   handDiv.innerHTML = '';
-  const displayTiles = p.isRiichi ? p.hand.length - 1 : p.hand.length;
-  if (p.isRiichi) {
-    for (let i = 0; i < displayTiles; i++) {
-      const span = document.createElement('span');
-      span.className = 'tile-char';
-      span.textContent = '🀫';
-      handDiv.appendChild(span);
-    }
-  } else {
-    for (const t of p.hand) {
-      const span = document.createElement('span');
-      span.className = 'tile-char';
-      span.textContent = '🀫';
-      handDiv.appendChild(span);
-    }
+  const displayTiles = p.isRiichi && !reveal ? p.hand.length - 1 : p.hand.length;
+  for (let i = 0; i < displayTiles; i++) {
+    const span = document.createElement('span');
+    span.className = 'tile-char';
+    span.textContent = reveal ? p.hand[i].char : '🀫';
+    handDiv.appendChild(span);
   }
 
   const meldsDiv = area.querySelector('.opponent-melds');
@@ -238,10 +229,10 @@ function renderOpponent(areaId, playerIdx) {
 
   const discDiv = area.querySelector('.opponent-discards');
   discDiv.innerHTML = '';
-  const discards = p.discards.slice(-12);
+  const discards = p.discards.slice(-24);
   for (const d of discards) {
     const span = document.createElement('span');
-    span.className = 'tile-char';
+    span.className = 'tile-char' + (d.called ? ' called' : '');
     span.textContent = d.char;
     discDiv.appendChild(span);
   }
@@ -284,11 +275,16 @@ function renderControls() {
         });
         ctrl.appendChild(btn);
       } else if (action.type === 'chi') {
+        const chiSets = action.chiSets || [];
         const btn = document.createElement('button');
         btn.textContent = 'チー';
         btn.addEventListener('click', () => {
-          game.humanCall(action);
-          continueGame();
+          if (chiSets.length <= 1) {
+            game.humanCall({ ...action, chosenChiSet: 0 });
+            continueGame();
+          } else {
+            showChiModal();
+          }
         });
         ctrl.appendChild(btn);
       } else if (action.type === 'kan') {
@@ -413,6 +409,33 @@ function renderControls() {
   }
 }
 
+function showChiModal() {
+  const modal = document.getElementById('chi-modal');
+  const options = document.getElementById('chi-options');
+  options.innerHTML = '';
+  const chiActions = game.availableActions.filter(a => a.type === 'chi');
+  for (const action of chiActions) {
+    for (let ci = 0; ci < action.chiSets.length; ci++) {
+      const cs = action.chiSets[ci];
+      const btn = document.createElement('button');
+      btn.textContent = cs.map(t => t.char).join(' ');
+      btn.addEventListener('click', () => {
+        modal.style.display = 'none';
+        game.humanCall({ ...action, chosenChiSet: ci });
+        continueGame();
+      });
+      options.appendChild(btn);
+    }
+  }
+  document.getElementById('chi-cancel').onclick = () => {
+    modal.style.display = 'none';
+    const passAction = game.availableActions.find(a => a.type === 'pass');
+    if (passAction) game.humanCall(passAction);
+    continueGame();
+  };
+  modal.style.display = 'flex';
+}
+
 function onTileClick(idx) {
   const p = game.players[0];
 
@@ -429,6 +452,10 @@ function onTileClick(idx) {
 // ===== Round Result =====
 
 function showRoundResult() {
+  renderOpponent('opponent-right', 1, true);
+  renderOpponent('opponent-top', 2, true);
+  renderOpponent('opponent-left', 3, true);
+
   const overlay = document.getElementById('round-result');
   const content = overlay.querySelector('#round-result-content');
 

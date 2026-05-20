@@ -61,22 +61,28 @@
     <div id="opponent-top" class="opponent-area">
       <div class="player-name">CPU2</div>
       <div class="player-score">25000点</div>
-      <div class="tiles-row"></div>
-      <div class="opponent-melds"></div>
+      <div class="opponent-hand-row">
+        <div class="tiles-row"></div>
+        <div class="opponent-melds"></div>
+      </div>
       <div class="opponent-discards"></div>
     </div>
     <div id="opponent-left" class="opponent-area">
       <div class="player-name">CPU3</div>
       <div class="player-score">25000点</div>
-      <div class="tiles-row"></div>
-      <div class="opponent-melds"></div>
+      <div class="opponent-hand-row">
+        <div class="tiles-row"></div>
+        <div class="opponent-melds"></div>
+      </div>
       <div class="opponent-discards"></div>
     </div>
     <div id="opponent-right" class="opponent-area">
       <div class="player-name">CPU1</div>
       <div class="player-score">25000点</div>
-      <div class="tiles-row"></div>
-      <div class="opponent-melds"></div>
+      <div class="opponent-hand-row">
+        <div class="tiles-row"></div>
+        <div class="opponent-melds"></div>
+      </div>
       <div class="opponent-discards"></div>
     </div>
 
@@ -91,9 +97,11 @@
         <span class="player-name">あなた (東)</span>
         <span class="player-score">25000点</span>
       </div>
-      <div id="player-melds"></div>
       <div id="player-discards"></div>
-      <div id="player-hand"></div>
+      <div id="player-hand-row">
+        <div id="player-melds"></div>
+        <div id="player-hand"></div>
+      </div>
       <div id="controls"></div>
     </div>
 
@@ -103,6 +111,14 @@
 
 <div id="round-result">
   <div id="round-result-content"></div>
+</div>
+
+<div id="chi-modal" style="display:none">
+  <div id="chi-modal-content">
+    <h3>選擇吃牌組合</h3>
+    <div id="chi-options"></div>
+    <button id="chi-cancel">取消</button>
+  </div>
 </div>
 
 <div id="result-screen">
