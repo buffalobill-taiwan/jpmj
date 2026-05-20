@@ -216,12 +216,6 @@ html, body {
   display:flex; gap:3px; justify-content:center;
 }
 
-#dora-area .dora-label {
-  font-size: clamp(0.6rem, 0.8vw, 0.7rem);
-  margin-right:3px;
-  opacity:0.7;
-}
-
 #dora-area .tile-char {
   font-size: clamp(1rem, 1.5vw, 1.3rem);
   border:1px solid var(--tile-border);
@@ -370,11 +364,6 @@ html, body {
 #player-hand .last-draw-slot .tile-char {
   border-color: var(--gold);
   box-shadow: 0 0 6px var(--gold), 0 2px 4px var(--shadow);
-}
-
-.last-draw {
-  border-color: var(--gold) !important;
-  box-shadow: 0 0 6px var(--gold) !important;
 }
 
 /* Discard pile */
@@ -539,17 +528,6 @@ html, body {
   cursor:pointer;
   font-weight:bold;
   font-family:inherit;
-}
-
-/* ===== Riichi stick display ===== */
-
-.riichi-stick {
-  position:absolute;
-  font-size: clamp(0.6rem, 0.8vw, 0.7rem);
-  color: var(--gold);
-  background: rgba(0,0,0,0.5);
-  padding: 1px 4px;
-  border-radius: 3px;
 }
 
 /* ===== Responsive ===== */

@@ -5,8 +5,6 @@ const SCREEN = { TITLE:0, GAME:1, RESULT:2 };
 let currentScreen = SCREEN.TITLE;
 let game = null;
 let selectedTile = -1;
-let processing = false;
-let roundResultActive = false;
 let setup = {
   length: 'east',
   difficulties: ['normal','normal','normal'],
@@ -71,10 +69,27 @@ function startGame() {
   document.getElementById('title-screen').style.display = 'none';
   document.getElementById('game-screen').style.display = 'block';
   selectedTile = -1;
-  processing = false;
   renderGame();
-  game.advance();
+  continueGame();
+}
+
+function continueGame() {
+  if (!game) return;
+  if (game.gameOver) { showFinalResult(); return; }
+  if (game.roundOver) { setTimeout(() => showRoundResult(), 300); return; }
+
   renderGame();
+  const needHuman = game.advance();
+  renderGame();
+
+  if (game.roundOver) {
+    setTimeout(() => showRoundResult(), 300);
+    return;
+  }
+
+  if (!needHuman) {
+    setTimeout(continueGame, 500);
+  }
 }
 
 // ===== Game Rendering =====
@@ -246,9 +261,7 @@ function renderControls() {
         btn.textContent = '過';
         btn.addEventListener('click', () => {
           game.humanCall(action);
-          renderGame();
-          game.advance();
-          renderGame();
+          continueGame();
         });
         ctrl.appendChild(btn);
       } else if (action.type === 'ron') {
@@ -267,9 +280,7 @@ function renderControls() {
         btn.textContent = 'ポン';
         btn.addEventListener('click', () => {
           game.humanCall(action);
-          renderGame();
-          game.advance();
-          renderGame();
+          continueGame();
         });
         ctrl.appendChild(btn);
       } else if (action.type === 'chi') {
@@ -277,9 +288,7 @@ function renderControls() {
         btn.textContent = 'チー';
         btn.addEventListener('click', () => {
           game.humanCall(action);
-          renderGame();
-          game.advance();
-          renderGame();
+          continueGame();
         });
         ctrl.appendChild(btn);
       } else if (action.type === 'kan') {
@@ -288,9 +297,7 @@ function renderControls() {
         btn.textContent = 'カン';
         btn.addEventListener('click', () => {
           game.humanCall(action);
-          renderGame();
-          game.advance();
-          renderGame();
+          continueGame();
         });
         ctrl.appendChild(btn);
       }
@@ -312,9 +319,7 @@ function renderControls() {
           if (selectedTile >= 0) {
             game.humanRiichi(selectedTile);
             selectedTile = -1;
-            renderGame();
-            game.advance();
-            renderGame();
+            continueGame();
           }
         });
         ctrl.appendChild(btn);
@@ -322,15 +327,45 @@ function renderControls() {
     }
 
     if (selectedTile >= 0) {
+      const counts = getCounts(p.hand);
+      const selectedKey = p.hand[selectedTile].key();
+
+      if (!p.isRiichi) {
+        if ((counts[selectedKey] || 0) >= 4) {
+          const btn = document.createElement('button');
+          btn.className = 'primary';
+          btn.textContent = 'カン';
+          btn.addEventListener('click', () => {
+            game.humanKan(selectedTile);
+            selectedTile = -1;
+            continueGame();
+          });
+          ctrl.appendChild(btn);
+        }
+
+        for (const m of p.melds) {
+          if (m.type === 'pon' && !m.isKan && m.tiles[0].key() === selectedKey) {
+            const btn = document.createElement('button');
+            btn.className = 'primary';
+            btn.textContent = '加槓';
+            btn.addEventListener('click', () => {
+              game.humanKan(selectedTile);
+              selectedTile = -1;
+              continueGame();
+            });
+            ctrl.appendChild(btn);
+            break;
+          }
+        }
+      }
+
       const btn = document.createElement('button');
       btn.textContent = '切る';
       btn.addEventListener('click', () => {
         if (selectedTile >= 0) {
           game.humanDiscard(selectedTile);
           selectedTile = -1;
-          renderGame();
-          game.advance();
-          renderGame();
+          continueGame();
         }
       });
       ctrl.appendChild(btn);
@@ -344,9 +379,7 @@ function renderControls() {
           btn.addEventListener('click', () => {
             game.humanDiscard(selectedTile);
             selectedTile = -1;
-            renderGame();
-            game.advance();
-            renderGame();
+            continueGame();
           });
           ctrl.appendChild(btn);
         }
@@ -367,10 +400,8 @@ function renderControls() {
         btn.textContent = 'スルー';
         btn.addEventListener('click', () => {
           game.availableActions = [];
-          game.advanceTurn();
-          renderGame();
-          game.advance();
-          renderGame();
+          game.phase = 'discard';
+          continueGame();
         });
         ctrl.appendChild(btn);
       }
@@ -379,7 +410,6 @@ function renderControls() {
 }
 
 function onTileClick(idx) {
-  if (processing) return;
   const p = game.players[0];
 
   if (game.phase === 'dealer_first_discard' || game.phase === 'discard') {
@@ -392,14 +422,9 @@ function onTileClick(idx) {
   }
 }
 
-function onTileHover(idx) {
-  // Could show tile name tooltip
-}
-
 // ===== Round Result =====
 
 function showRoundResult() {
-  roundResultActive = true;
   const overlay = document.getElementById('round-result');
   const content = overlay.querySelector('#round-result-content');
 
@@ -448,16 +473,13 @@ function showRoundResult() {
 
   document.getElementById('next-round-btn').addEventListener('click', () => {
     overlay.style.display = 'none';
-    roundResultActive = false;
 
     if (game.checkGameOver()) {
       showFinalResult();
     } else {
       game.endRound();
       selectedTile = -1;
-      renderGame();
-      game.advance();
-      renderGame();
+      continueGame();
     }
   });
 }

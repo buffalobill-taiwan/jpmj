@@ -6,12 +6,6 @@ function getCounts(tiles) {
   return m;
 }
 
-function tileMapFromCounts(counts) {
-  const m = {};
-  for (const [k, c] of Object.entries(counts)) m[k] = c;
-  return m;
-}
-
 function removeTiles(tiles, key, n) {
   const r = [];
   let rem = n;
@@ -20,10 +14,6 @@ function removeTiles(tiles, key, n) {
     else { r.push(t); }
   }
   return r;
-}
-
-function sortTilesKey(tiles) {
-  return Tile.sortTiles(tiles);
 }
 
 function key(suit, value) {

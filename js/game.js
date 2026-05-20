@@ -105,103 +105,99 @@ class Game {
     this.phase = 'dealer_first_discard';
   }
 
-  // Called repeatedly by main.js to advance AI turns
+  // Called repeatedly by main.js to advance one step at a time.
+  // Returns true if human input is needed (stop the game loop).
   advance() {
-    if (this.gameOver || this.roundOver) return;
+    if (this.gameOver || this.roundOver) return true;
 
-    let maxIter = 200;
-    while (maxIter-- > 0) {
-      if (this.phase === 'dealer_first_discard') {
-        if (this.players[this.currentPlayer].isHuman) {
-          this.availableActions = ['discard'];
-          return;
-        }
-        const idx = aiChooseDiscard(this, this.currentPlayer);
-        this.executeDiscard(this.currentPlayer, idx);
-        continue;
+    if (this.phase === 'dealer_first_discard') {
+      if (this.players[this.currentPlayer].isHuman) {
+        this.availableActions = ['discard'];
+        return true;
       }
-
-      if (this.phase === 'draw') {
-        const tile = this.wall.draw();
-        if (!tile) {
-          this.handleExhaustiveDraw();
-          return;
-        }
-        const p = this.players[this.currentPlayer];
-        p.hand.push(tile);
-        p.hand = Tile.sortTiles(p.hand);
-        p.lastDraw = tile;
-        this.addLog(this.currentPlayer, '摸', tile.name);
-        this.turnCount++;
-
-        if (this.checkTsumo(this.currentPlayer)) {
-          if (this.players[this.currentPlayer].isHuman) {
-            this.availableActions = ['tsumo', 'pass'];
-            return;
-          }
-          if (aiDecideTsumo(this, this.currentPlayer)) {
-            this.executeWin(this.currentPlayer, 'tsumo', tile);
-            return;
-          }
-        }
-
-        if (p.isRiichi) {
-          const drawnIdx = p.hand.findIndex(t => t.equals(tile));
-          this.executeDiscard(this.currentPlayer, drawnIdx);
-          continue;
-        }
-
-        this.phase = 'discard';
-        continue;
-      }
-
-      if (this.phase === 'discard') {
-        if (this.players[this.currentPlayer].isHuman) {
-          this.availableActions = ['discard'];
-          return;
-        }
-        const idx = aiChooseDiscard(this, this.currentPlayer);
-        this.executeDiscard(this.currentPlayer, idx);
-        continue;
-      }
-
-      if (this.phase === 'call_pending') {
-        const needHuman = this.processCallPhase();
-        if (needHuman) return;
-        continue;
-      }
-
-      if (this.phase === 'rinshan') {
-        const tile = this.wall.drawRinshan();
-        if (!tile) {
-          this.handleExhaustiveDraw();
-          return;
-        }
-        const p = this.players[this.currentPlayer];
-        p.hand.push(tile);
-        p.lastDraw = tile;
-
-        if (this.checkTsumo(this.currentPlayer)) {
-          if (this.players[this.currentPlayer].isHuman) {
-            this.availableActions = ['tsumo', 'pass'];
-            return;
-          }
-          if (aiDecideTsumo(this, this.currentPlayer)) {
-            this.executeWin(this.currentPlayer, 'tsumo', tile);
-            return;
-          }
-        }
-
-        this.phase = 'discard';
-        continue;
-      }
-
-      if (this.phase === 'round_end' || this.phase === 'game_end') {
-        return;
-      }
-
-      break;
+      const idx = aiChooseDiscard(this, this.currentPlayer);
+      this.executeDiscard(this.currentPlayer, idx);
+      return false;
     }
+
+    if (this.phase === 'draw') {
+      const tile = this.wall.draw();
+      if (!tile) {
+        this.handleExhaustiveDraw();
+        return true;
+      }
+      const p = this.players[this.currentPlayer];
+      p.hand.push(tile);
+      p.hand = Tile.sortTiles(p.hand);
+      p.lastDraw = tile;
+      this.addLog(this.currentPlayer, '摸', tile.name);
+      this.turnCount++;
+
+      if (this.checkTsumo(this.currentPlayer)) {
+        if (this.players[this.currentPlayer].isHuman) {
+          this.availableActions = ['tsumo', 'pass'];
+          return true;
+        }
+        if (aiDecideTsumo(this, this.currentPlayer)) {
+          this.executeWin(this.currentPlayer, 'tsumo', tile);
+          return true;
+        }
+      }
+
+      if (p.isRiichi) {
+        const drawnIdx = p.hand.findIndex(t => t.equals(tile));
+        this.executeDiscard(this.currentPlayer, drawnIdx);
+        return false;
+      }
+
+      this.phase = 'discard';
+      return false;
+    }
+
+    if (this.phase === 'discard') {
+      if (this.players[this.currentPlayer].isHuman) {
+        this.availableActions = ['discard'];
+        return true;
+      }
+      if (this.handleAIKan(this.currentPlayer)) {
+        return false;
+      }
+      const idx = aiChooseDiscard(this, this.currentPlayer);
+      this.executeDiscard(this.currentPlayer, idx);
+      return false;
+    }
+
+    if (this.phase === 'call_pending') {
+      const needHuman = this.processCallPhase();
+      return needHuman;
+    }
+
+    if (this.phase === 'rinshan') {
+      const tile = this.wall.drawRinshan();
+      if (!tile) {
+        this.handleExhaustiveDraw();
+        return true;
+      }
+      const p = this.players[this.currentPlayer];
+      p.hand.push(tile);
+      p.lastDraw = tile;
+
+      if (this.checkTsumo(this.currentPlayer)) {
+        if (this.players[this.currentPlayer].isHuman) {
+          this.availableActions = ['tsumo', 'pass'];
+          return true;
+        }
+        if (aiDecideTsumo(this, this.currentPlayer)) {
+          this.executeWin(this.currentPlayer, 'tsumo', tile);
+          return true;
+        }
+      }
+
+      this.phase = 'discard';
+      return false;
+    }
+
+    return true;
   }
 
   // ===== Discard Flow =====
@@ -210,7 +206,6 @@ class Game {
     if (!this.players[this.currentPlayer].isHuman) return;
     if (this.phase !== 'dealer_first_discard' && this.phase !== 'discard') return;
     this.executeDiscard(this.currentPlayer, tileIdx);
-    this.advance();
   }
 
   executeDiscard(playerIdx, tileIdx) {
@@ -231,6 +226,7 @@ class Game {
     }
 
     this.phase = 'call_pending';
+    this.availableActions = [];
     this.availableCalls = this.buildAvailableCalls(playerIdx, tile);
   }
 
@@ -318,17 +314,13 @@ class Game {
 
   humanCall(callChoice) {
     if (callChoice.type === 'pass') {
-      const remainingCalls = this.availableCalls.filter(
-        c => this.players[c.playerIdx].isHuman && c.type !== callChoice.type
-      );
-      if (remainingCalls.length === 0) {
-        const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
-        const chosenCall = aiDecideCall(this, aiCalls);
-        if (chosenCall) {
-          this.executeCall(chosenCall);
-        } else {
-          this.advanceTurn();
-        }
+      this.availableCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
+      const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
+      const chosenCall = aiDecideCall(this, aiCalls);
+      if (chosenCall) {
+        this.executeCall(chosenCall);
+      } else {
+        this.advanceTurn();
       }
       return;
     }
@@ -347,11 +339,10 @@ class Game {
 
     if (type === 'pon') {
       this.addLog(playerIdx, 'ポン', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
-      const removed = [];
       let n = 2;
       const newHand = [];
       for (const t of p.hand) {
-        if (n > 0 && t.key() === tile.key()) { removed.push(t); n--; }
+        if (n > 0 && t.key() === tile.key()) { n--; }
         else { newHand.push(t); }
       }
       p.hand = newHand;
@@ -379,7 +370,6 @@ class Game {
     if (type === 'chi') {
       this.addLog(playerIdx, 'チー', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
       const chiTileSet = call.chiSets[0];
-      const removed = [];
       const newHand = [];
       const keepKeys = {};
       for (const ct of chiTileSet) {
@@ -389,7 +379,6 @@ class Game {
       for (const t of p.hand) {
         const k = t.key();
         if (keepKeys[k] && keepKeys[k] > 0) {
-          removed.push(t);
           keepKeys[k]--;
         } else {
           newHand.push(t);
@@ -454,6 +443,7 @@ class Game {
     this.lastDiscard = null;
     this.lastDiscardPlayer = -1;
     this.availableCalls = [];
+    this.availableActions = [];
     this.currentPlayer = (this.currentPlayer + 1) % 4;
     this.phase = 'draw';
   }
@@ -489,23 +479,25 @@ class Game {
 
   humanKan(tileIdx) {
     const p = this.players[this.currentPlayer];
+    if (!p.isHuman) return;
     if (p.isRiichi) return;
+    if (this.phase !== 'discard') return;
     const tile = p.hand[tileIdx];
     const handCounts = getCounts(p.hand);
 
     if ((handCounts[tile.key()] || 0) >= 4) {
       const newHand = [];
       let n = 4;
-      const removed = [];
       for (const t of p.hand) {
-        if (n > 0 && t.key() === tile.key()) { removed.push(t); n--; }
+        if (n > 0 && t.key() === tile.key()) { n--; }
         else { newHand.push(t); }
       }
       p.hand = newHand;
       p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
       this.wall.addDoraIndicator();
+      this.availableActions = [];
       this.phase = 'rinshan';
-      this.advance();
+      return;
     }
 
     for (const m of p.melds) {
@@ -522,14 +514,69 @@ class Game {
         m.isKan = true;
         m.open = true;
         this.wall.addDoraIndicator();
+        this.availableActions = [];
         this.phase = 'rinshan';
-        this.advance();
         return;
       }
     }
   }
 
-  // ===== Win / Ron / Tsumo =====
+  // ===== AI Kan Handling =====
+
+  handleAIKan(playerIdx) {
+    const p = this.players[playerIdx];
+    if (p.isRiichi) return false;
+    if (this.phase !== 'discard') return false;
+
+    const counts = getCounts(p.hand);
+
+    for (const [k, c] of Object.entries(counts)) {
+      if (c === 4 && aiDecideKan(this, playerIdx)) {
+        const tile = p.hand.find(t => t.key() === k);
+        const newHand = [];
+        let n = 4;
+        for (const t of p.hand) {
+          if (n > 0 && t.key() === k) { n--; }
+          else { newHand.push(t); }
+        }
+        p.hand = newHand;
+        p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
+        this.wall.addDoraIndicator();
+        this.addLog(playerIdx, '暗槓', tile.name);
+        this.availableActions = [];
+        this.phase = 'rinshan';
+        return true;
+      }
+    }
+
+    for (const m of p.melds) {
+      if (m.type === 'pon' && !m.isKan) {
+        const ponKey = m.tiles[0].key();
+        if ((counts[ponKey] || 0) >= 1) {
+          const tile = p.hand.find(t => t.key() === ponKey);
+          if (tile && Math.random() < 0.3) {
+            const newHand = [];
+            let removed = false;
+            for (const t of p.hand) {
+              if (!removed && t.key() === ponKey) { removed = true; }
+              else { newHand.push(t); }
+            }
+            p.hand = newHand;
+            m.type = 'kan';
+            m.tiles.push(tile);
+            m.isKan = true;
+            this.wall.addDoraIndicator();
+            this.addLog(playerIdx, '加槓', tile.name);
+            this.availableActions = [];
+            this.phase = 'rinshan';
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
 
   checkTsumo(playerIdx) {
     const p = this.players[playerIdx];

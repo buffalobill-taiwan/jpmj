@@ -1,5 +1,3 @@
-const SUIT = { MAN:'man', PIN:'pin', SOU:'sou', HONOR:'honor' };
-
 const SUIT_ORDER = { man:0, pin:1, sou:2, honor:3 };
 
 const CODE_POINT = {
@@ -15,8 +13,6 @@ const NAME_MAP = {
   sou:   ['一索','二索','三索','四索','五索','六索','七索','八索','九索'],
   honor: ['東','南','西','北','白','發','中'],
 };
-
-const HONOR_VALUE_RONIN = { 1:'東', 2:'南', 3:'西', 4:'北', 5:'白', 6:'發', 7:'中' };
 
 class Tile {
   constructor(suit, value) {
@@ -54,20 +50,12 @@ class Tile {
     return this.isHonor && this.value <= 4;
   }
 
-  get isSimple() {
-    return !this.isTerminal;
-  }
-
   equals(other) {
     return other && this.suit === other.suit && this.value === other.value;
   }
 
   toString() {
     return this.suit[0] + this.value;
-  }
-
-  toDisplay() {
-    return this.name;
   }
 
   key() {
@@ -105,12 +93,6 @@ class Tile {
     });
   }
 
-  static groupBySuit(tiles) {
-    const groups = { man:[], pin:[], sou:[], honor:[] };
-    for (const t of tiles) groups[t.suit].push(t);
-    return groups;
-  }
-
   static countMap(tiles) {
     const map = {};
     for (const t of tiles) {
@@ -118,11 +100,5 @@ class Tile {
       map[k] = (map[k] || 0) + 1;
     }
     return map;
-  }
-
-  static keySet(tiles) {
-    const set = {};
-    for (const t of tiles) set[t.key()] = true;
-    return set;
   }
 }
