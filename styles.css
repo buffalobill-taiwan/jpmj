@@ -200,22 +200,16 @@ html, body {
   gap: 2px;
 }
 
-#opponent-right .tiles-row .tile-char {
-  transform: rotate(90deg);
-}
-
-#opponent-left .tiles-row .tile-char {
-  transform: rotate(270deg);
-}
-
+#opponent-right .tiles-row .tile-char,
 #opponent-right .opponent-melds .tile-char,
 #opponent-right .opponent-discards .tile-char {
-  transform: rotate(90deg);
+  transform: rotate(270deg);
 }
 
+#opponent-left .tiles-row .tile-char,
 #opponent-left .opponent-melds .tile-char,
 #opponent-left .opponent-discards .tile-char {
-  transform: rotate(270deg);
+  transform: rotate(90deg);
 }
 
 #opponent-right .opponent-melds,
