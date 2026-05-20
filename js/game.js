@@ -48,7 +48,7 @@ class Game {
     this.players = [];
     for (let i = 0; i < 4; i++) {
       this.players.push({
-        name: i === 0 ? 'あなた' : ['CPU1','CPU2','CPU3'][i - 1],
+        name: i === 0 ? 'あなた' : i === 1 ? 'CPU1' : i === 2 ? 'CPU2' : 'CPU3',
         isHuman: i === 0,
         difficulty: i === 0 ? null : this.options.difficulties[i - 1],
         hand: [],

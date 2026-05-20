@@ -99,9 +99,9 @@ function renderGame() {
 
   renderCenterInfo();
   renderPlayerArea();
-  renderOpponent('opponent-top', 1);
-  renderOpponent('opponent-left', 2);
-  renderOpponent('opponent-right', 3);
+  renderOpponent('opponent-right', 1);
+  renderOpponent('opponent-top', 2);
+  renderOpponent('opponent-left', 3);
   renderControls();
   renderLog();
 }
