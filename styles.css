@@ -192,6 +192,42 @@ html, body {
   opacity:0.6;
 }
 
+/* Side opponents: vertical tiles with rotation */
+#opponent-right .tiles-row,
+#opponent-left .tiles-row {
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+#opponent-right .tiles-row .tile-char {
+  transform: rotate(90deg);
+}
+
+#opponent-left .tiles-row .tile-char {
+  transform: rotate(270deg);
+}
+
+#opponent-right .opponent-melds,
+#opponent-left .opponent-melds {
+  flex-direction: column;
+  align-items: center;
+}
+
+#opponent-right .opponent-melds .meld-group,
+#opponent-left .opponent-melds .meld-group {
+  flex-direction: column;
+  align-items: center;
+}
+
+#opponent-right .opponent-discards,
+#opponent-left .opponent-discards {
+  flex-direction: column;
+  max-width: none;
+  max-height: 300px;
+  align-items: center;
+}
+
 /* Center info */
 #center-info {
   position:absolute;
