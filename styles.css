@@ -228,6 +228,21 @@ html, body {
   align-items: center;
 }
 
+/* Side opponent discard positioning */
+#opponent-left .opponent-discards {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#opponent-right .opponent-discards {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* Center info */
 #center-info {
   position:absolute;
