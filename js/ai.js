@@ -105,10 +105,16 @@ function estimateShanten(hand, melds) {
   const calledMelds = melds.length;
   const result = countBlocks(hand);
   const totalMelds = result.melds + calledMelds;
+
+  // When 4+ melds already formed, only the pair matters
+  if (totalMelds >= 4) {
+    return result.pairs > 0 ? 0 : 1;
+  }
+
   const partialBlocks = result.partials + Math.min(result.pairs, 1);
   const maxPartials = Math.max(0, 4 - totalMelds);
   const effectivePartials = Math.min(partialBlocks, maxPartials);
-  const shanten = 8 - 2 * totalMelds - effectivePartials - Math.min(result.pairs, 1);
+  const shanten = (4 - totalMelds) * 2 - effectivePartials - Math.min(result.pairs, 1);
   return Math.max(0, shanten);
 }
 
