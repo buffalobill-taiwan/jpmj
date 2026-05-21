@@ -5,6 +5,7 @@ const SCREEN = { TITLE:0, GAME:1, RESULT:2 };
 let currentScreen = SCREEN.TITLE;
 let game = null;
 let selectedTile = -1;
+let autoPlay = false;
 let setup = {
   length: 'east',
   difficulties: ['normal','normal','normal'],
@@ -75,19 +76,24 @@ function startGame() {
 
 function continueGame() {
   if (!game) return;
-  if (game.gameOver) { showFinalResult(); return; }
-  if (game.roundOver) { setTimeout(() => showRoundResult(), 300); return; }
+  if (game.gameOver) { autoPlay = false; showFinalResult(); return; }
+  if (game.roundOver) { autoPlay = false; setTimeout(() => showRoundResult(), 300); return; }
 
   renderGame();
   const needHuman = game.advance();
   renderGame();
 
   if (game.roundOver) {
+    autoPlay = false;
     setTimeout(() => showRoundResult(), 300);
     return;
   }
 
   if (!needHuman) {
+    setTimeout(continueGame, 500);
+  } else if (autoPlay) {
+    processAutoPlay();
+    renderGame();
     setTimeout(continueGame, 500);
   }
 }
@@ -404,6 +410,96 @@ function renderControls() {
           continueGame();
         });
         ctrl.appendChild(btn);
+      }
+    }
+  }
+
+  if (!game.gameOver && !game.roundOver) {
+    const autoBtn = document.createElement('button');
+    autoBtn.className = 'auto-btn';
+    autoBtn.textContent = autoPlay ? '中止' : '託管';
+    autoBtn.addEventListener('click', () => {
+      autoPlay = !autoPlay;
+      renderGame();
+      if (autoPlay) continueGame();
+    });
+    ctrl.appendChild(autoBtn);
+  }
+}
+
+// ===== Auto-Play =====
+
+function processAutoPlay() {
+  // A. Discard phase
+  if (game.phase === 'dealer_first_discard' || game.phase === 'discard') {
+    if (game.players[game.currentPlayer].isHuman && game.availableActions.includes('discard')) {
+      if (game.handleAIKan(0)) return;
+      const p = game.players[0];
+      if (!p.isRiichi) {
+        for (let i = 0; i < p.hand.length; i++) {
+          const testHand = p.hand.filter((_, j) => j !== i);
+          if (checkTenpai(testHand, p.melds) && aiDecideRiichi(game, 0)) {
+            selectedTile = -1;
+            game.humanRiichi(i);
+            return;
+          }
+        }
+      }
+      const idx = aiChooseDiscard(game, 0);
+      selectedTile = -1;
+      game.humanDiscard(idx);
+      return;
+    }
+  }
+
+  // B. Call pending
+  if (game.phase === 'call_pending') {
+    const humanCalls = game.availableActions.filter(a => a.type && a.type !== 'pass');
+    const ronCall = humanCalls.find(a => a.type === 'ron');
+    if (ronCall) {
+      game.humanCall(ronCall);
+      return;
+    }
+    const nonRonCall = humanCalls.find(a => a.type === 'pon' || a.type === 'chi');
+    if (nonRonCall) {
+      if (nonRonCall.type === 'chi' && nonRonCall.chiSets && nonRonCall.chiSets.length > 1) {
+        game.humanCall({ ...nonRonCall, chosenChiSet: 0 });
+      } else {
+        game.humanCall(nonRonCall);
+      }
+      return;
+    }
+    const passAction = game.availableActions.find(a => a.type === 'pass');
+    if (passAction) {
+      game.humanCall(passAction);
+      return;
+    }
+    for (const a of game.availableActions) {
+      if (a.type === 'kan') { game.humanCall(a); return; }
+    }
+    return;
+  }
+
+  // C. Tsumo / pass
+  if (game.availableActions) {
+    for (const action of game.availableActions) {
+      if (action === 'tsumo') {
+        if (aiDecideTsumo(game, 0)) {
+          const p = game.players[0];
+          const tile = p.lastDraw;
+          game.executeWin(0, 'tsumo', tile);
+        } else {
+          game.availableActions = [];
+          game.phase = 'discard';
+        }
+        return;
+      }
+    }
+    for (const action of game.availableActions) {
+      if (action === 'pass') {
+        game.availableActions = [];
+        game.phase = 'discard';
+        return;
       }
     }
   }

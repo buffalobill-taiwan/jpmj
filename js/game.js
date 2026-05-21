@@ -164,11 +164,13 @@ class Game {
         return false;
       }
       const p = this.players[this.currentPlayer];
-      if (!p.isRiichi) {
-        const riichiTileIdx = aiDecideRiichi(this, this.currentPlayer);
-        if (riichiTileIdx !== -1) {
-          this.humanRiichi(riichiTileIdx);
-          return false;
+      if (!p.isRiichi && aiDecideRiichi(this, this.currentPlayer)) {
+        for (let i = 0; i < p.hand.length; i++) {
+          const testHand = p.hand.filter((_, j) => j !== i);
+          if (checkTenpai(testHand, p.melds)) {
+            this.humanRiichi(i);
+            return false;
+          }
         }
       }
       const idx = aiChooseDiscard(this, this.currentPlayer);

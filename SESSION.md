@@ -103,3 +103,72 @@ python3 -m http.server 8080
 # 瀏覽器開啟 http://localhost:8080
 # 無需建置工具
 ```
+
+---
+
+## 下一項功能：託管（Auto-Play）按鈕
+
+### 目標
+加入「託管」鈕，按下後進入自動遊玩狀態，由 AI 代為決定打牌/鳴牌/立直/和牌等所有操作，直到該局結束或玩家按下「中止」鈕。
+
+### 實作範圍
+僅修改 `main.js`，不變動 `game.js` / `ai.js`。重用現有 AI 函數（`aiChooseDiscard`、`aiDecideRiichi`、`aiDecideTsumo`、`handleAIKan`）。
+
+### 新增／修改
+
+#### 1. 全域變數 `autoPlay`（布林，預設 `false`）
+
+#### 2. `renderControls()` 加入「託管」/「中止」按鈕
+- `autoPlay === false`：顯示「託管」，點擊 → `autoPlay = true`，重繪，若 game 正在等人則呼叫 `continueGame()`
+- `autoPlay === true`：顯示「中止」，點擊 → `autoPlay = false`，重繪
+- 按鈕固定在控制區最左側或獨立一行，不與其他操作按鈕混淆
+
+#### 3. `continueGame()` 加入 auto-play 分支
+```
+if (needHuman && autoPlay) {
+  processAutoPlay()     // 以 AI 邏輯做出決策
+  renderGame()          // 即時顯示結果
+  setTimeout(continueGame, 500)  // 繼續循環
+  return
+}
+```
+- `gameOver` / `roundOver` 頂端檢查處設 `autoPlay = false`
+
+#### 4. 新函數 `processAutoPlay()`
+處理四種需要人類輸入的情境：
+
+**A. 捨牌階段（`dealer_first_discard` / `discard`）**
+```
+1. handleAIKan(0)  // 暗槓與加槓
+2. aiDecideRiichi(game, 0) → 找到打出能聽牌的牌，humanRiichi(idx)
+3. aiChooseDiscard(game, 0) → humanDiscard(idx)
+```
+
+**B. 鳴牌階段（`call_pending`）**
+```
+篩選 game.availableActions 中屬於 P0 的 call（非 pass）
+1. ron 優先 → humanCall(ronCall)
+2. pon/chi → 擲骰（機率依預設難度，約 0.5），接受則 humanCall(call)
+3. 其餘 → humanCall({type:'pass'})
+```
+
+**C. ツモ判斷（`availableActions` 含 `'tsumo'`）**
+```
+aiDecideTsumo(game, 0) → true：executeWin(0, 'tsumo', tile)
+                        → false：availableActions=[], phase='discard'
+```
+
+**D. スルー（`availableActions` 含 `'pass'` 字串，非 call 結構）**
+```
+availableActions=[], phase='discard'
+```
+
+### 自動重設時機
+- 該局結束（`roundOver`）→ `autoPlay = false`
+- 遊戲結束（`gameOver`）→ `autoPlay = false`
+- 玩家點擊「中止」→ `autoPlay = false`
+
+### 不處理的邊界情況
+- 不記憶託管前的選牌狀態（selectedTile 自然清空）
+- 不吃牌選擇對話框（chi modal）：auto-play 一律選第一個 chiSet
+- 不改變 game.js 邏輯；託管只是模擬 P0 的 UI 操作
