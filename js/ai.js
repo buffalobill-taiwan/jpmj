@@ -344,6 +344,7 @@ function expertDiscard(game, playerIdx) {
     if (isIsolated(hand, tile)) {
       if (tile.isHonor) val += 12000;
       else if (tile.isTerminal) val += 6000;
+      else val += 2000;
     }
 
     if (val > bestVal) {
@@ -386,6 +387,7 @@ function normalDiscard(game, playerIdx) {
     if (isIsolated(hand, tile)) {
       if (tile.isHonor) val += 3000;
       else if (tile.isTerminal) val += 1500;
+      else val += 500;
     }
 
     evals.push({ idx: indices[0], val, shanten });
