@@ -325,7 +325,8 @@ function aiDecideCall(game, availableCalls) {
           handAfter = removeTiles(player.hand, call.chiSets[0][0].key(), 1);
           handAfter = removeTiles(handAfter, call.chiSets[0][1].key(), 1);
         }
-        const shantenAfter = estimateShanten(handAfter, player.melds);
+        const meldsAfter = [...player.melds, { type: call.type }];
+        const shantenAfter = estimateShanten(handAfter, meldsAfter);
         if (shantenAfter >= shantenBefore) continue;
       }
 

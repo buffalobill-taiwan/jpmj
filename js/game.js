@@ -163,6 +163,14 @@ class Game {
       if (this.handleAIKan(this.currentPlayer)) {
         return false;
       }
+      const p = this.players[this.currentPlayer];
+      if (!p.isRiichi) {
+        const riichiTileIdx = aiDecideRiichi(this, this.currentPlayer);
+        if (riichiTileIdx !== -1) {
+          this.humanRiichi(riichiTileIdx);
+          return false;
+        }
+      }
       const idx = aiChooseDiscard(this, this.currentPlayer);
       this.executeDiscard(this.currentPlayer, idx);
       return false;
@@ -457,7 +465,6 @@ class Game {
   // ===== Riichi =====
 
   humanRiichi(tileIdx) {
-    if (!this.players[this.currentPlayer].isHuman) return;
     if (this.phase !== 'discard' && this.phase !== 'dealer_first_discard') return;
     const p = this.players[this.currentPlayer];
     if (p.isRiichi) return;
@@ -662,22 +669,21 @@ class Game {
     }
 
     if (this.honba > 0) {
-      p.score += this.honba * 300;
+      if (payments.type === 'tsumo') {
+        for (let i = 0; i < 4; i++) {
+          if (i === winnerIdx) continue;
+          this.players[i].score -= this.honba * 100;
+        }
+      } else {
+        this.players[this.lastDiscardPlayer].score -= this.honba * 300;
+      }
     }
-    p.score += this.riichiSticks * 1000;
 
     for (const pl of this.players) {
       if (pl.riichiBet > 0) {
         p.score += pl.riichiBet;
         pl.riichiBet = 0;
       }
-    }
-
-    if (winnerIdx === this.dealerIndex) {
-      this.honba++;
-    } else {
-      this.dealerIndex = (this.dealerIndex + 1) % 4;
-      this.honba = 0;
     }
     this.riichiSticks = 0;
   }
@@ -704,13 +710,6 @@ class Game {
       for (const ni of notenPlayers) {
         this.players[ni].score -= paymentPerNoten;
       }
-    }
-
-    if (this.players[this.dealerIndex].isTenpai) {
-      this.honba++;
-    } else {
-      this.dealerIndex = (this.dealerIndex + 1) % 4;
-      this.honba = 0;
     }
 
     this.roundResult = {
@@ -746,7 +745,7 @@ class Game {
   // ===== End Game =====
 
   checkGameOver() {
-    if (this.roundNumber >= this.maxRounds - 1) {
+    if (this.roundNumber >= this.maxRounds) {
       this.gameOver = true;
       return true;
     }
@@ -760,7 +759,24 @@ class Game {
   }
 
   endRound() {
-    this.roundNumber++;
+    if (this.roundResult.winner === -1) {
+      const dealerTenpai = this.players[this.dealerIndex].isTenpai;
+      if (!dealerTenpai) {
+        this.dealerIndex = (this.dealerIndex + 1) % 4;
+        this.honba = 0;
+        this.roundNumber++;
+      } else {
+        this.honba++;
+      }
+    } else {
+      if (this.roundResult.winner === this.dealerIndex) {
+        this.honba++;
+      } else {
+        this.dealerIndex = (this.dealerIndex + 1) % 4;
+        this.honba = 0;
+        this.roundNumber++;
+      }
+    }
 
     if (this.checkGameOver()) {
       this.phase = 'game_end';
