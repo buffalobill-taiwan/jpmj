@@ -78,17 +78,20 @@ jpmj/
 
 ## 最近修正
 
-### 託管功能（0bf366d）
-- 加入「託管」按鈕，AI 代為決定所有捨牌/鳴牌/立直/和了
-- 該局結束或玩家按「中止」時恢復手動操作
+### 多重修正（52a2822）
+- **checkToitoi/checkSanankou/checkHonroutou/checkSanshokuDoukou**：カン（type:'kan'）也視為刻子，修正這些役種在包含槓的牌型無法成立的問題
+- **buildAvailableCalls**：大明槓改為檢查其他玩家（非捨牌者），與 pon 同樣在手中 3 枚以上時提供選擇
+- **aiDecideCall**：大明槓呼叫前檢查向聽數是否進步（與 pon/chi 同樣邏輯）
+- **countVisibleTiles/getWaitQuality**：將 `game` 作為明確參數傳遞，不再依賴全域變數
+- **processAutoPlay**：kan 優先權高於 pon（自動遊玩時先檢查槓再碰）
 
-### AI 捨牌重寫（this commit）
-- **`countBlocks` 重寫**：改以貪婪演算法依序提取刻子→順子→對子→搭子（両面/嵌/辺），孤立牌不再計為 block。修正原本 isolate 牌也被算成 block 導致 `estimateShanten` 永遠回傳 0 的 bug
-- **`estimateShanten` 重寫**：新公式 `8 - 2*M - min(P, 4-M) - min(K,1)`，正確反映向聽數
-- **`expertDiscard` 強化**：聽牌時評估待牌品質（殘枚數 × 權重）；非聽牌時計算改良牌數（`countImprovingTiles`）；防守加入筋牌判斷（`isSuji` 傳入 `tileDangerLevel`）
-- **`normalDiscard` 強化**：同向聽數內隨機選取保留彈性；基本防守（無筋牌）
-- **`tileDangerLevel` 增加 `useSuji` 參數**：高手 AI 啟用筋牌過濾（筋牌危險度降至 0.2~0.5），一般 AI 不啟用
-- **新工具函數**：`valueToTile()`、`countImprovingTiles()`、`countVisibleTiles()`、`getWaitQuality()`、`isSuji()`
+### AI 捨牌重寫（ads5e19f → 52a2822）
+- **`countBlocks` 重寫**：改用 DP（`solveSuitDP`）每個花色獨立分析，枚舉刻子/順子/對子/搭子/孤立牌所有組合，以 `isBetter` 評分函數選出最佳 block 組合。修正舊貪婪演算法在 `[2,2,2,3,4]` 等邊界情況的選擇錯誤
+- **`estimateShanten` 重寫**：公式 `(4 - M) * 2 - min(P + min(K,1), 4-M) - min(K,1)`，正確反映向聽數
+- **`expertDiscard` 強化**：聽牌時評估待牌品質（殘枚數 × 權重）；非聽牌時計算改良牌數（`countImprovingTiles`）；防守加入筋牌判斷（`isSuji`）；對子保留加分 +50
+- **`normalDiscard` 強化**：同向聽數內隨機選取保留彈性；基本防守（無筋牌）；對子保留加分 +10
+- **`tileDangerLevel` 增加 `useSuji` 參數**：高手 AI 啟用筋牌過濾（筋牌危險度降至 0.2~0.5）
+- **新工具函數**：`solveSuitDP()`、`addResult()`、`isBetter()`、`valueToTile()`、`countImprovingTiles()`、`countVisibleTiles()`、`getWaitQuality()`、`isSuji()`
 
 ### 規則修正（3a27fb0）
 - **連莊（renchan）**：親家和牌時只加本場，不進局、不換莊。`endRound()` 依 `roundResult` 判斷連莊
@@ -121,69 +124,9 @@ python3 -m http.server 8080
 
 ---
 
-## 下一項功能：託管（Auto-Play）按鈕
+## 已實作功能總結
 
-### 目標
-加入「託管」鈕，按下後進入自動遊玩狀態，由 AI 代為決定打牌/鳴牌/立直/和牌等所有操作，直到該局結束或玩家按下「中止」鈕。
-
-### 實作範圍
-僅修改 `main.js`，不變動 `game.js` / `ai.js`。重用現有 AI 函數（`aiChooseDiscard`、`aiDecideRiichi`、`aiDecideTsumo`、`handleAIKan`）。
-
-### 新增／修改
-
-#### 1. 全域變數 `autoPlay`（布林，預設 `false`）
-
-#### 2. `renderControls()` 加入「託管」/「中止」按鈕
-- `autoPlay === false`：顯示「託管」，點擊 → `autoPlay = true`，重繪，若 game 正在等人則呼叫 `continueGame()`
-- `autoPlay === true`：顯示「中止」，點擊 → `autoPlay = false`，重繪
-- 按鈕固定在控制區最左側或獨立一行，不與其他操作按鈕混淆
-
-#### 3. `continueGame()` 加入 auto-play 分支
-```
-if (needHuman && autoPlay) {
-  processAutoPlay()     // 以 AI 邏輯做出決策
-  renderGame()          // 即時顯示結果
-  setTimeout(continueGame, 500)  // 繼續循環
-  return
-}
-```
-- `gameOver` / `roundOver` 頂端檢查處設 `autoPlay = false`
-
-#### 4. 新函數 `processAutoPlay()`
-處理四種需要人類輸入的情境：
-
-**A. 捨牌階段（`dealer_first_discard` / `discard`）**
-```
-1. handleAIKan(0)  // 暗槓與加槓
-2. aiDecideRiichi(game, 0) → 找到打出能聽牌的牌，humanRiichi(idx)
-3. aiChooseDiscard(game, 0) → humanDiscard(idx)
-```
-
-**B. 鳴牌階段（`call_pending`）**
-```
-篩選 game.availableActions 中屬於 P0 的 call（非 pass）
-1. ron 優先 → humanCall(ronCall)
-2. pon/chi → 擲骰（機率依預設難度，約 0.5），接受則 humanCall(call)
-3. 其餘 → humanCall({type:'pass'})
-```
-
-**C. ツモ判斷（`availableActions` 含 `'tsumo'`）**
-```
-aiDecideTsumo(game, 0) → true：executeWin(0, 'tsumo', tile)
-                        → false：availableActions=[], phase='discard'
-```
-
-**D. スルー（`availableActions` 含 `'pass'` 字串，非 call 結構）**
-```
-availableActions=[], phase='discard'
-```
-
-### 自動重設時機
-- 該局結束（`roundOver`）→ `autoPlay = false`
-- 遊戲結束（`gameOver`）→ `autoPlay = false`
-- 玩家點擊「中止」→ `autoPlay = false`
-
-### 不處理的邊界情況
-- 不記憶託管前的選牌狀態（selectedTile 自然清空）
-- 不吃牌選擇對話框（chi modal）：auto-play 一律選第一個 chiSet
-- 不改變 game.js 邏輯；託管只是模擬 P0 的 UI 操作
+### 託管（Auto-Play）
+- 畫面左下角「託管」按鈕，AI 代為決定所有捨牌/鳴牌/立直/和了
+- 該局結束或玩家按「中止」時恢復手動操作
+- 自動遊玩：kan 優先 > ron > pon/chi > pass 的決策順序
