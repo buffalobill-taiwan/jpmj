@@ -3,19 +3,19 @@
 const AI_DIFFICULTY = {
   expert: {
     name: '高手',
-    callRate: 0.7,
+    callRate: 0.75,
     riichiRate: 0.8,
     defenseLevel: 2,
   },
   normal: {
     name: '一般人',
-    callRate: 0.4,
+    callRate: 0.65,
     riichiRate: 0.5,
     defenseLevel: 1,
   },
   beginner: {
     name: '初學者',
-    callRate: 0.9,
+    callRate: 0.8,
     riichiRate: 0.2,
     defenseLevel: 0,
   },
@@ -209,7 +209,7 @@ function expertDiscard(game, playerIdx) {
 
   const evals = [];
   for (const [k, indices] of Object.entries(uniq)) {
-    const testHand = hand.filter(t => t.key() !== k);
+    const testHand = removeTiles(hand, k, 1);
     const waits = getWaitingTiles(testHand, p.melds);
     const shanten = waits.length > 0 ? 0 : estimateShanten(testHand, p.melds);
     const tile = hand[indices[0]];
@@ -237,12 +237,16 @@ function normalDiscard(game, playerIdx) {
   }
 
   const evals = [];
+  const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
   for (const [k, indices] of Object.entries(uniq)) {
-    const testHand = hand.filter(t => t.key() !== k);
+    const testHand = removeTiles(hand, k, 1);
     const waits = getWaitingTiles(testHand, p.melds);
     const shanten = waits.length > 0 ? 0 : estimateShanten(testHand, p.melds);
-
-    const value = -shanten * 100 + waits.length * 3;
+    let value = -shanten * 100 + waits.length * 3;
+    if (hasThreat) {
+      const danger = tileDangerLevel(game, hand[indices[0]]);
+      value -= danger * 20;
+    }
     evals.push({ idx: indices[0], value, shanten, waits });
   }
 
@@ -304,39 +308,39 @@ function aiDecideCall(game, availableCalls) {
     callsByPlayer[call.playerIdx].push(call);
   }
 
-  let bestPlayer = -1;
-  let bestType = '';
+  let bestCall = null;
   let bestWeight = -1;
 
   for (const [pIdx, calls] of Object.entries(callsByPlayer)) {
     const player = game.players[pIdx];
     const cfg = AI_DIFFICULTY[player.difficulty];
-    const priority = { kan:0, pon:1, chi:2 };
-    let weight = 0;
+    const shantenBefore = estimateShanten(player.hand, player.melds);
 
     for (const call of calls) {
-      if (call.type === 'pon') {
-        weight = cfg.callRate * 100;
-      } else if (call.type === 'chi') {
-        weight = cfg.callRate * 60;
-      } else if (call.type === 'kan') {
-        weight = cfg.callRate * 80;
+      if (call.type === 'pon' || call.type === 'chi') {
+        let handAfter;
+        if (call.type === 'pon') {
+          handAfter = removeTiles(player.hand, call.tile.key(), 2);
+        } else {
+          handAfter = removeTiles(player.hand, call.chiSets[0][0].key(), 1);
+          handAfter = removeTiles(handAfter, call.chiSets[0][1].key(), 1);
+        }
+        const shantenAfter = estimateShanten(handAfter, player.melds);
+        if (shantenAfter >= shantenBefore) continue;
+      }
+
+      let baseRate = cfg.callRate;
+      if (call.type === 'chi') baseRate *= 0.7;
+      const weight = baseRate * 100;
+
+      if (weight > bestWeight) {
+        bestWeight = weight;
+        bestCall = call;
       }
     }
-
-    if (weight > bestWeight) {
-      bestWeight = weight;
-      bestPlayer = parseInt(pIdx);
-      bestType = 'first';
-    }
   }
 
-  if (bestPlayer >= 0 && Math.random() * 100 < bestWeight) {
-    const pCalls = callsByPlayer[bestPlayer];
-    const priCall = pCalls.find(c => c.type === 'pon') || pCalls.find(c => c.type === 'kan') || pCalls[0];
-    return priCall;
-  }
-
+  if (bestCall && Math.random() * 100 < bestWeight) return bestCall;
   return null;
 }
 
