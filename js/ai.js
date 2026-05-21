@@ -93,9 +93,16 @@ function countBlocks(hand) {
 
   for (let v = 1; v <= 7; v++) {
     const c = counts['honor' + v] || 0;
-    if (c >= 3) melds++;
-    else if (c === 2) pairs++;
-    else isolated += c;
+    if (c >= 3) {
+      melds += Math.floor(c / 3);
+      const rem = c % 3;
+      if (rem === 2) pairs++;
+      else if (rem === 1) isolated++;
+    } else if (c === 2) {
+      pairs++;
+    } else {
+      isolated += c;
+    }
   }
 
   return { melds, pairs, partials, isolated };
@@ -274,7 +281,7 @@ function expertDiscard(game, playerIdx) {
       val -= danger * 30;
     }
 
-    if (tile.isHonor) val -= 5;
+    if (indices.length >= 2) val += 50; // keep pairs
 
     if (val > bestVal) {
       bestVal = val;
@@ -310,6 +317,8 @@ function normalDiscard(game, playerIdx) {
       const danger = tileDangerLevel(game, tile, false);
       val -= danger * 15;
     }
+
+    if (indices.length >= 2) val += 10;
 
     evals.push({ idx: indices[0], val, shanten });
   }
