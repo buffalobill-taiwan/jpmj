@@ -461,7 +461,7 @@ function checkJunchan(handInfo, gameState) {
 
 function checkToitoi(handInfo, gameState) {
   for (const m of handInfo.melds) {
-    if (m.type !== 'triplet') return [];
+    if (m.type !== 'triplet' && m.type !== 'kan') return [];
   }
   return [{ name:'対々和', han:2 }];
 }
@@ -469,7 +469,7 @@ function checkToitoi(handInfo, gameState) {
 function checkSanankou(handInfo, gameState) {
   let closedTriplets = 0;
   for (const m of handInfo.melds) {
-    if (m.type === 'triplet' && !m.open) closedTriplets++;
+    if ((m.type === 'triplet' || m.type === 'kan') && !m.open) closedTriplets++;
   }
   if (handInfo.isKokushi || handInfo.isChiitoitsu) return [];
   return closedTriplets >= 3 ? [{ name:'三暗刻', han:2 }] : [];
@@ -483,8 +483,7 @@ function checkHonroutou(handInfo, gameState) {
     }
   }
   if (handInfo.pair && !handInfo.pair.isTerminal) return [];
-  const han = 2;
-  return [{ name:'混老頭', han }];
+  return [{ name:'混老頭', han:2 }];
 }
 
 function checkShousangen(handInfo, gameState) {
@@ -498,6 +497,25 @@ function checkShousangen(handInfo, gameState) {
   if (handInfo.pair && handInfo.pair.isSangen) dragonPair = true;
   if (dragonTriplets === 2 && dragonPair) {
     return [{ name:'小三元', han:2 }];
+  }
+  return [];
+}
+
+function checkSanshokuDoukou(handInfo, gameState) {
+  for (let i = 0; i < handInfo.melds.length; i++) {
+    if (handInfo.melds[i].type !== 'triplet' && handInfo.melds[i].type !== 'kan') continue;
+    const v = handInfo.melds[i].tiles[0].value;
+    const suits = {};
+    suits[handInfo.melds[i].tiles[0].suit] = true;
+    for (let j = 0; j < handInfo.melds.length; j++) {
+      if (i === j || (handInfo.melds[j].type !== 'triplet' && handInfo.melds[j].type !== 'kan')) continue;
+      if (handInfo.melds[j].tiles[0].value === v) {
+        suits[handInfo.melds[j].tiles[0].suit] = true;
+      }
+    }
+    if (suits.man && suits.pin && suits.sou) {
+      return [{ name:'三色同刻', han:2 }];
+    }
   }
   return [];
 }

@@ -460,6 +460,9 @@ function processAutoPlay() {
       game.humanCall(ronCall);
       return;
     }
+    const kanCall = humanCalls.find(a => a.type === 'kan');
+    if (kanCall) { game.humanCall(kanCall); return; }
+
     const nonRonCall = humanCalls.find(a => a.type === 'pon' || a.type === 'chi');
     if (nonRonCall) {
       if (nonRonCall.type === 'chi' && nonRonCall.chiSets && nonRonCall.chiSets.length > 1) {
@@ -473,9 +476,6 @@ function processAutoPlay() {
     if (passAction) {
       game.humanCall(passAction);
       return;
-    }
-    for (const a of game.availableActions) {
-      if (a.type === 'kan') { game.humanCall(a); return; }
     }
     return;
   }

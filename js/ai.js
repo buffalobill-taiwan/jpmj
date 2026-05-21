@@ -31,64 +31,15 @@ function countBlocks(hand) {
   let isolated = 0;
 
   for (const suit of ['man', 'pin', 'sou']) {
-    const vals = [];
+    const suitCounts = [];
     for (let v = 1; v <= 9; v++) {
-      const c = counts[suit + v] || 0;
-      for (let i = 0; i < c; i++) vals.push(v);
+      suitCounts.push(counts[suit + v] || 0);
     }
-    if (vals.length === 0) continue;
-
-    const used = new Array(vals.length).fill(false);
-
-    // Triplets
-    for (let i = 0; i < vals.length - 2; i++) {
-      if (used[i] || used[i+1] || used[i+2]) continue;
-      if (vals[i] === vals[i+1] && vals[i] === vals[i+2]) {
-        used[i] = used[i+1] = used[i+2] = true;
-        melds++;
-      }
-    }
-
-    // Sequences (low to high)
-    for (let i = 0; i < vals.length - 2; i++) {
-      if (used[i]) continue;
-      for (let j = i+1; j < vals.length - 1; j++) {
-        if (used[j] || vals[j] !== vals[i] + 1) continue;
-        for (let k = j+1; k < vals.length; k++) {
-          if (used[k] || vals[k] !== vals[i] + 2) continue;
-          used[i] = used[j] = used[k] = true;
-          melds++;
-          break;
-        }
-        if (used[i]) break;
-      }
-    }
-
-    // Pairs
-    for (let i = 0; i < vals.length - 1; i++) {
-      if (used[i]) continue;
-      if (!used[i+1] && vals[i] === vals[i+1]) {
-        used[i] = used[i+1] = true;
-        pairs++;
-      }
-    }
-
-    // Partials: adjacent (gap=1), then gap=2
-    for (let gap = 1; gap <= 2; gap++) {
-      for (let i = 0; i < vals.length - 1; i++) {
-        if (used[i]) continue;
-        for (let j = i+1; j < vals.length; j++) {
-          if (used[j] || vals[j] !== vals[i] + gap) continue;
-          used[i] = used[j] = true;
-          partials++;
-          break;
-        }
-      }
-    }
-
-    for (let i = 0; i < vals.length; i++) {
-      if (!used[i]) isolated++;
-    }
+    const result = solveSuitDP(suitCounts);
+    melds += result.melds;
+    pairs += result.pairs;
+    partials += result.partials;
+    isolated += result.isolated;
   }
 
   for (let v = 1; v <= 7; v++) {
@@ -106,6 +57,96 @@ function countBlocks(hand) {
   }
 
   return { melds, pairs, partials, isolated };
+}
+
+function solveSuitDP(counts) {
+  const memo = new Map();
+  const keyBuf = [];
+
+  function dp(pos, c) {
+    if (pos >= 9) return { melds: 0, pairs: 0, partials: 0, isolated: 0 };
+
+    keyBuf.length = 0;
+    keyBuf.push(pos);
+    for (let i = pos; i < 9; i++) { keyBuf.push(c[i]); }
+    const key = keyBuf.join(',');
+    const cached = memo.get(key);
+    if (cached !== undefined) return cached;
+
+    const cnt = c[pos];
+    let best = null;
+
+    if (cnt === 0) {
+      best = dp(pos + 1, c);
+    } else {
+      let r;
+
+      // All isolated at this position
+      const skipC = c.slice();
+      skipC[pos] = 0;
+      best = addResult({ melds: 0, pairs: 0, partials: 0, isolated: cnt }, dp(pos + 1, skipC));
+
+      // Pair
+      if (cnt >= 2) {
+        const nc = c.slice();
+        nc[pos] -= 2;
+        r = addResult({ melds: 0, pairs: 1, partials: 0, isolated: 0 }, dp(pos, nc));
+        if (isBetter(r, best)) best = r;
+      }
+
+      // Triplet
+      if (cnt >= 3) {
+        const nc = c.slice();
+        nc[pos] -= 3;
+        r = addResult({ melds: 1, pairs: 0, partials: 0, isolated: 0 }, dp(pos, nc));
+        if (isBetter(r, best)) best = r;
+      }
+
+      // Sequence
+      if (pos <= 6 && cnt >= 1 && c[pos + 1] >= 1 && c[pos + 2] >= 1) {
+        const nc = c.slice();
+        nc[pos] -= 1; nc[pos + 1] -= 1; nc[pos + 2] -= 1;
+        r = addResult({ melds: 1, pairs: 0, partials: 0, isolated: 0 }, dp(pos, nc));
+        if (isBetter(r, best)) best = r;
+      }
+
+      // Partial adjacent
+      if (pos <= 7 && cnt >= 1 && c[pos + 1] >= 1) {
+        const nc = c.slice();
+        nc[pos] -= 1; nc[pos + 1] -= 1;
+        r = addResult({ melds: 0, pairs: 0, partials: 1, isolated: 0 }, dp(pos, nc));
+        if (isBetter(r, best)) best = r;
+      }
+
+      // Partial gap
+      if (pos <= 6 && cnt >= 1 && c[pos + 2] >= 1) {
+        const nc = c.slice();
+        nc[pos] -= 1; nc[pos + 2] -= 1;
+        r = addResult({ melds: 0, pairs: 0, partials: 1, isolated: 0 }, dp(pos, nc));
+        if (isBetter(r, best)) best = r;
+      }
+    }
+
+    memo.set(key, best);
+    return best;
+  }
+
+  return dp(0, counts);
+}
+
+function addResult(a, b) {
+  return {
+    melds: a.melds + b.melds,
+    pairs: a.pairs + b.pairs,
+    partials: a.partials + b.partials,
+    isolated: a.isolated + b.isolated,
+  };
+}
+
+function isBetter(a, b) {
+  const sa = a.melds * 20 + Math.min(a.pairs, 1) * 20 + a.partials * 10 - a.isolated;
+  const sb = b.melds * 20 + Math.min(b.pairs, 1) * 20 + b.partials * 10 - b.isolated;
+  return sa > sb;
 }
 
 function estimateShanten(hand, melds) {
@@ -218,21 +259,21 @@ function safeDiscards(game, playerIdx) {
 
 // ===== Wait Quality =====
 
-function getWaitQuality(hand, melds) {
+function getWaitQuality(game, hand, melds) {
   const waits = getWaitingTiles(hand, melds);
   if (waits.length === 0) return { count: 0, quality: 0, tiles: [] };
 
   let quality = 0;
   let totalRemaining = 0;
   for (const t of waits) {
-    const remaining = 4 - countVisibleTiles(t);
+    const remaining = 4 - countVisibleTiles(game, t);
     totalRemaining += remaining;
     quality += remaining * 2;
   }
   return { count: waits.length, quality, tiles: waits, totalRemaining };
 }
 
-function countVisibleTiles(tile) {
+function countVisibleTiles(game, tile) {
   let count = 0;
   for (const p of game.players) {
     for (const d of p.discards) { if (d.key() === tile.key()) count++; }
@@ -268,7 +309,7 @@ function expertDiscard(game, playerIdx) {
     let val = 0;
 
     if (waits.length > 0) {
-      const wq = getWaitQuality(testHand, p.melds);
+      const wq = getWaitQuality(game, testHand, p.melds);
       val = 100000 - shanten * 10000 + wq.quality * 10 + wq.count * 50;
     } else {
       const improve = countImprovingTiles(testHand, p.melds);
@@ -392,10 +433,12 @@ function aiDecideCall(game, availableCalls) {
     const shantenBefore = estimateShanten(player.hand, player.melds);
 
     for (const call of calls) {
-      if (call.type === 'pon' || call.type === 'chi') {
+      if (call.type === 'pon' || call.type === 'chi' || call.type === 'kan') {
         let handAfter;
         if (call.type === 'pon') {
           handAfter = removeTiles(player.hand, call.tile.key(), 2);
+        } else if (call.type === 'kan') {
+          handAfter = removeTiles(player.hand, call.tile.key(), 3);
         } else {
           handAfter = removeTiles(player.hand, call.chiSets[0][0].key(), 1);
           handAfter = removeTiles(handAfter, call.chiSets[0][1].key(), 1);

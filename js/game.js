@@ -259,9 +259,9 @@ class Game {
       const handCounts = getCounts(hand);
       const tileKey = tile.key();
       if ((handCounts[tileKey] || 0) >= 2) {
-        const canPon = i >= 1;
-        if (canPon) {
-          calls.push({ type: 'pon', playerIdx: pIdx, tile });
+        calls.push({ type: 'pon', playerIdx: pIdx, tile });
+        if ((handCounts[tileKey] || 0) >= 3) {
+          calls.push({ type: 'kan', playerIdx: pIdx, tile, isCalled: true });
         }
       }
 
@@ -281,15 +281,6 @@ class Game {
         if (chiSets.length > 0) {
           calls.push({ type: 'chi', playerIdx: pIdx, tile, chiSets });
         }
-      }
-    }
-
-    const curP = this.players[discardPlayerIdx];
-    if (!curP.isRiichi) {
-      const handCounts = getCounts(curP.hand);
-      const tileKey = tile.key();
-      if ((handCounts[tileKey] || 0) >= 3) {
-        calls.push({ type: 'kan', playerIdx: discardPlayerIdx, tile, isCalled: true });
       }
     }
 
