@@ -25,100 +25,111 @@ const AI_DIFFICULTY = {
 
 function countBlocks(hand) {
   const counts = getCounts(hand);
-  const suitTiles = { man:[], pin:[], sou:[] };
-  const honorCounts = {};
-
-  for (const [k, c] of Object.entries(counts)) {
-    let suit, val;
-    if (k.startsWith('man')) { suit='man'; val=parseInt(k.slice(3)); }
-    else if (k.startsWith('pin')) { suit='pin'; val=parseInt(k.slice(3)); }
-    else if (k.startsWith('sou')) { suit='sou'; val=parseInt(k.slice(3)); }
-    else { suit='honor'; val=parseInt(k.slice(5)); }
-
-    if (suit === 'honor') {
-      honorCounts[val] = c;
-    } else {
-      for (let i = 0; i < c; i++) suitTiles[suit].push(val);
-    }
-  }
-
-  let blocks = 0;
+  let melds = 0;
   let pairs = 0;
+  let partials = 0;
+  let isolated = 0;
 
-  for (const s of ['man','pin','sou']) {
-    const vals = suitTiles[s].sort((a, b) => a - b);
+  for (const suit of ['man', 'pin', 'sou']) {
+    const vals = [];
+    for (let v = 1; v <= 9; v++) {
+      const c = counts[suit + v] || 0;
+      for (let i = 0; i < c; i++) vals.push(v);
+    }
+    if (vals.length === 0) continue;
+
     const used = new Array(vals.length).fill(false);
 
-    for (let i = 0; i < vals.length; i++) {
-      if (used[i]) continue;
-      if (i + 2 < vals.length && vals[i] === vals[i+1] && vals[i] === vals[i+2]) {
+    // Triplets
+    for (let i = 0; i < vals.length - 2; i++) {
+      if (used[i] || used[i+1] || used[i+2]) continue;
+      if (vals[i] === vals[i+1] && vals[i] === vals[i+2]) {
         used[i] = used[i+1] = used[i+2] = true;
-        blocks++;
-        continue;
+        melds++;
       }
     }
 
-    for (let i = 0; i < vals.length; i++) {
+    // Sequences (low to high)
+    for (let i = 0; i < vals.length - 2; i++) {
       if (used[i]) continue;
-      if (i + 1 < vals.length && vals[i] === vals[i+1]) {
+      for (let j = i+1; j < vals.length - 1; j++) {
+        if (used[j] || vals[j] !== vals[i] + 1) continue;
+        for (let k = j+1; k < vals.length; k++) {
+          if (used[k] || vals[k] !== vals[i] + 2) continue;
+          used[i] = used[j] = used[k] = true;
+          melds++;
+          break;
+        }
+        if (used[i]) break;
+      }
+    }
+
+    // Pairs
+    for (let i = 0; i < vals.length - 1; i++) {
+      if (used[i]) continue;
+      if (!used[i+1] && vals[i] === vals[i+1]) {
         used[i] = used[i+1] = true;
         pairs++;
-        continue;
       }
     }
 
-    for (let i = 0; i < vals.length; i++) {
-      if (used[i]) continue;
-      const v = vals[i];
-      let foundSeq = false;
-      for (let j = i + 1; j < vals.length; j++) {
-        if (used[j] || vals[j] !== v + 1) continue;
-        for (let k = j + 1; k < vals.length; k++) {
-          if (used[k] || vals[k] !== v + 2) continue;
-          used[i] = used[j] = used[k] = true;
-          blocks++;
-          foundSeq = true;
-          break;
-        }
-        if (foundSeq) break;
-      }
-    }
-
-    for (let i = 0; i < vals.length; i++) {
-      if (used[i]) continue;
-      for (let j = i + 1; j < vals.length; j++) {
-        if (used[j]) continue;
-        if (vals[j] === vals[i] + 1 || vals[j] === vals[i] + 2) {
+    // Partials: adjacent (gap=1), then gap=2
+    for (let gap = 1; gap <= 2; gap++) {
+      for (let i = 0; i < vals.length - 1; i++) {
+        if (used[i]) continue;
+        for (let j = i+1; j < vals.length; j++) {
+          if (used[j] || vals[j] !== vals[i] + gap) continue;
           used[i] = used[j] = true;
-          blocks++;
+          partials++;
           break;
         }
       }
     }
 
     for (let i = 0; i < vals.length; i++) {
-      if (!used[i]) blocks++;
+      if (!used[i]) isolated++;
     }
   }
 
-  for (const [val, c] of Object.entries(honorCounts)) {
-    if (c >= 3) blocks++;
+  for (let v = 1; v <= 7; v++) {
+    const c = counts['honor' + v] || 0;
+    if (c >= 3) melds++;
     else if (c === 2) pairs++;
-    else blocks++;
+    else isolated += c;
   }
 
-  blocks += Math.floor(pairs / 2);
-  pairs = pairs % 2;
-
-  return { blocks, hasPair: pairs > 0 };
+  return { melds, pairs, partials, isolated };
 }
 
 function estimateShanten(hand, melds) {
-  const meldCount = melds.length;
+  const calledMelds = melds.length;
   const result = countBlocks(hand);
-  const effectiveBlocks = result.blocks + meldCount;
-  const shanten = 8 - effectiveBlocks * 2 - (result.hasPair ? 1 : 0) - meldCount;
+  const totalMelds = result.melds + calledMelds;
+  const partialBlocks = result.partials + Math.min(result.pairs, 1);
+  const maxPartials = Math.max(0, 4 - totalMelds);
+  const effectivePartials = Math.min(partialBlocks, maxPartials);
+  const shanten = 8 - 2 * totalMelds - effectivePartials - Math.min(result.pairs, 1);
   return Math.max(0, shanten);
+}
+
+function countImprovingTiles(hand, melds) {
+  let count = 0;
+  const curShanten = estimateShanten(hand, melds);
+  if (curShanten === 0) return 0;
+  for (let v = 1; v <= 34; v++) {
+    const tile = valueToTile(v);
+    const testHand = [...hand, tile];
+    const newShanten = estimateShanten(testHand, melds);
+    if (newShanten < curShanten) count++;
+  }
+  return count;
+}
+
+function valueToTile(v) {
+  if (v <= 9) return new Tile('man', v);
+  if (v <= 18) return new Tile('pin', v - 9);
+  if (v <= 27) return new Tile('sou', v - 18);
+  return new Tile('honor', v - 27);
 }
 
 // ===== Tile Danger Assessment =====
@@ -128,7 +139,19 @@ function isGenbutsu(game, playerIdx, tile) {
   return p.discards.some(d => d.key() === tile.key());
 }
 
-function tileDangerLevel(game, tile) {
+function isSuji(game, playerIdx, tile) {
+  const p = game.players[playerIdx];
+  if (tile.suit === 'honor') return false;
+  const v = tile.value;
+  for (const sujiV of [v - 3, v + 3]) {
+    if (sujiV < 1 || sujiV > 9) continue;
+    const sujiTile = new Tile(tile.suit, sujiV);
+    if (p.discards.some(d => d.key() === sujiTile.key())) return true;
+  }
+  return false;
+}
+
+function tileDangerLevel(game, tile, useSuji) {
   let danger = 0;
 
   for (let i = 0; i < 4; i++) {
@@ -138,10 +161,16 @@ function tileDangerLevel(game, tile) {
 
     if (isGenbutsu(game, i, tile)) continue;
 
-    danger += p.isRiichi ? 3 : 1;
-    if (p.melds.length >= 2) danger += 1;
-    if (tile.isHonor) danger += 1;
-    if (tile.isTerminal && !tile.isHonor) danger += 0.5;
+    if (useSuji && isSuji(game, i, tile)) {
+      danger += p.isRiichi ? 0.5 : 0.2;
+      continue;
+    }
+
+    let tileDanger = p.isRiichi ? 4 : 1.5;
+    if (p.melds.length >= 2) tileDanger += 1;
+    if (tile.isHonor) tileDanger += 1;
+    if (tile.isTerminal && !tile.isHonor) tileDanger += 0.5;
+    danger += tileDanger;
   }
 
   return danger;
@@ -174,28 +203,35 @@ function safeDiscards(game, playerIdx) {
   return safe;
 }
 
-// ===== Discard Selection =====
+// ===== Wait Quality =====
 
-function evaluateDiscard(game, playerIdx, tileIdx) {
-  const p = game.players[playerIdx];
-  const hand = p.hand;
-  const tile = hand[tileIdx];
-  const testHand = hand.filter((_, i) => i !== tileIdx);
+function getWaitQuality(hand, melds) {
+  const waits = getWaitingTiles(hand, melds);
+  if (waits.length === 0) return { count: 0, quality: 0, tiles: [] };
 
-  const waits = getWaitingTiles(testHand, p.melds);
-  const shanten = waits.length > 0 ? 0 : estimateShanten(testHand, p.melds);
-  const danger = tileDangerLevel(game, tile);
-  const isRiichiOrMeld = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
-  const waitCount = waits.length;
-
-  let value = 0;
-  value -= shanten * 100;
-  value += waitCount * 2;
-  if (isRiichiOrMeld) value -= danger * 10;
-  if (tile.isHonor || tile.isTerminal) value -= 1;
-
-  return { idx: tileIdx, shanten, waitCount, danger, value, waits };
+  let quality = 0;
+  let totalRemaining = 0;
+  for (const t of waits) {
+    const remaining = 4 - countVisibleTiles(t);
+    totalRemaining += remaining;
+    quality += remaining * 2;
+  }
+  return { count: waits.length, quality, tiles: waits, totalRemaining };
 }
+
+function countVisibleTiles(tile) {
+  let count = 0;
+  for (const p of game.players) {
+    for (const d of p.discards) { if (d.key() === tile.key()) count++; }
+    for (const t of p.hand) { if (t.key() === tile.key()) count++; }
+    for (const m of p.melds) {
+      for (const t of m.tiles) { if (t.key() === tile.key()) count++; }
+    }
+  }
+  return count;
+}
+
+// ===== Discard Selection =====
 
 function expertDiscard(game, playerIdx) {
   const p = game.players[playerIdx];
@@ -207,23 +243,40 @@ function expertDiscard(game, playerIdx) {
     uniq[k].push(i);
   }
 
-  const evals = [];
+  let bestIdx = -1;
+  let bestVal = -Infinity;
+
   for (const [k, indices] of Object.entries(uniq)) {
     const testHand = removeTiles(hand, k, 1);
+    const tile = hand[indices[0]];
     const waits = getWaitingTiles(testHand, p.melds);
     const shanten = waits.length > 0 ? 0 : estimateShanten(testHand, p.melds);
-    const tile = hand[indices[0]];
-    const danger = tileDangerLevel(game, tile);
 
-    let safetyBonus = 0;
-    if (danger === 0) safetyBonus = 100;
+    let val = 0;
 
-    const value = -shanten * 1000 + waits.length * 20 - danger * 50 + safetyBonus;
-    evals.push({ idx: indices[0], value, shanten, waits });
+    if (waits.length > 0) {
+      const wq = getWaitQuality(testHand, p.melds);
+      val = 100000 - shanten * 10000 + wq.quality * 10 + wq.count * 50;
+    } else {
+      const improve = countImprovingTiles(testHand, p.melds);
+      val = -shanten * 10000 + improve * 8;
+    }
+
+    const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
+    if (hasThreat) {
+      const danger = tileDangerLevel(game, tile, true);
+      val -= danger * 30;
+    }
+
+    if (tile.isHonor) val -= 5;
+
+    if (val > bestVal) {
+      bestVal = val;
+      bestIdx = indices[0];
+    }
   }
 
-  evals.sort((a, b) => b.value - a.value);
-  return evals[0].idx;
+  return bestIdx;
 }
 
 function normalDiscard(game, playerIdx) {
@@ -238,22 +291,29 @@ function normalDiscard(game, playerIdx) {
 
   const evals = [];
   const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
+
   for (const [k, indices] of Object.entries(uniq)) {
     const testHand = removeTiles(hand, k, 1);
+    const tile = hand[indices[0]];
     const waits = getWaitingTiles(testHand, p.melds);
     const shanten = waits.length > 0 ? 0 : estimateShanten(testHand, p.melds);
-    let value = -shanten * 100 + waits.length * 3;
+
+    let val = -shanten * 100 + (waits.length > 0 ? waits.length * 5 : 0);
+
     if (hasThreat) {
-      const danger = tileDangerLevel(game, hand[indices[0]]);
-      value -= danger * 20;
+      const danger = tileDangerLevel(game, tile, false);
+      val -= danger * 15;
     }
-    evals.push({ idx: indices[0], value, shanten, waits });
+
+    evals.push({ idx: indices[0], val, shanten });
   }
 
-  evals.sort((a, b) => b.value - a.value);
+  evals.sort((a, b) => b.val - a.val);
   const bestShanten = evals[0].shanten;
-  const best = evals.filter(e => e.shanten === bestShanten);
-  return best[Math.floor(Math.random() * best.length)].idx;
+  const candidates = evals.filter(e => e.shanten === bestShanten);
+  return candidates.length > 0
+    ? candidates[Math.floor(Math.random() * candidates.length)].idx
+    : evals[0].idx;
 }
 
 function beginnerDiscard(game, playerIdx) {

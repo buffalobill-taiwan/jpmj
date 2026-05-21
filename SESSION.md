@@ -78,13 +78,28 @@ jpmj/
 
 ## 最近修正
 
-### 規則修正（this commit）
-- **連莊（renchan）**：親家和牌時只加本場，不進局、不換莊。`endRound()` 依 `roundResult` 判斷連莊，決定是否遞增 `roundNumber` 與更換莊家
-- **局數計算**：`checkGameOver()` 改為 `roundNumber >= maxRounds`，修正 off-by-one 導致提前結束（原本少一局）
-- **本場棒支付**：榮和時放銃者多付 `honba × 300`，自摸時各家多付 `honba × 100`；修正原本 winner 憑空獲得點數的 bug
-- **立直棒重複計算**：移除 `p.score += this.riichiSticks * 1000` 該行，改為只透過各家 `riichiBet` 發放，修正 winner 雙倍領取的 bug
-- **AI 立直**：在 `advance()` 的 discard phase 中，AI 打牌前呼叫 `aiDecideRiichi()`（原本從未被呼叫）
-- **AI 鳴牌評估**：`estimateShanten()` 傳入的 melds 陣列包含新形成的面子，修正原本向聽數高估導致拒絕有利鳴牌的 bug
+### 託管功能（0bf366d）
+- 加入「託管」按鈕，AI 代為決定所有捨牌/鳴牌/立直/和了
+- 該局結束或玩家按「中止」時恢復手動操作
+
+### AI 捨牌重寫（this commit）
+- **`countBlocks` 重寫**：改以貪婪演算法依序提取刻子→順子→對子→搭子（両面/嵌/辺），孤立牌不再計為 block。修正原本 isolate 牌也被算成 block 導致 `estimateShanten` 永遠回傳 0 的 bug
+- **`estimateShanten` 重寫**：新公式 `8 - 2*M - min(P, 4-M) - min(K,1)`，正確反映向聽數
+- **`expertDiscard` 強化**：聽牌時評估待牌品質（殘枚數 × 權重）；非聽牌時計算改良牌數（`countImprovingTiles`）；防守加入筋牌判斷（`isSuji` 傳入 `tileDangerLevel`）
+- **`normalDiscard` 強化**：同向聽數內隨機選取保留彈性；基本防守（無筋牌）
+- **`tileDangerLevel` 增加 `useSuji` 參數**：高手 AI 啟用筋牌過濾（筋牌危險度降至 0.2~0.5），一般 AI 不啟用
+- **新工具函數**：`valueToTile()`、`countImprovingTiles()`、`countVisibleTiles()`、`getWaitQuality()`、`isSuji()`
+
+### 規則修正（3a27fb0）
+- **連莊（renchan）**：親家和牌時只加本場，不進局、不換莊。`endRound()` 依 `roundResult` 判斷連莊
+- **局數計算**：`checkGameOver()` 改為 `roundNumber >= maxRounds`，修正 off-by-one
+- **本場棒支付**：榮和放銃者付 `honba×300`，自摸各家付 `honba×100`
+- **立直棒**：移除 `riichiSticks×1000` 重複計算
+- **AI 立直**：`advance()` discard phase 中呼叫 `aiDecideRiichi()`
+- **AI 鳴牌評估**：`estimateShanten` melds 包含新面子
+
+### 寶牌顯示（a67a3f7）
+- 結算畫面役種列表顯示「ドラ X飜」
 
 ## 已知限制
 
