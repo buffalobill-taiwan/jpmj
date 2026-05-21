@@ -471,6 +471,7 @@ function showRoundResult() {
     const winner = game.players[game.roundResult.winner];
     const r = game.roundResult;
     let yakuStr = r.yaku.map(y => `${y.name}（${y.isYakuman ? '役滿' : y.han + '飜'}）`).join('<br>');
+    if (r.doraHan > 0) yakuStr += `<br>ドラ ${r.doraHan}飜`;
     if (r.totalHan > 0) yakuStr += `<br>合計 ${r.totalHan}飜 ${r.fu}符`;
 
     let scoreStr = '';
@@ -548,7 +549,7 @@ function renderLog() {
   if (!el) return;
   const entries = game.log;
   el.innerHTML = entries.slice(-25).map(e =>
-    `<div class="log-entry"><span class="log-turn">${e.turn}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}</div>`
+    `<div class="log-entry"><span class="log-turn">${e.turn + 1}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}</div>`
   ).join('');
   el.scrollTop = el.scrollHeight;
 }

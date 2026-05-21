@@ -638,6 +638,7 @@ class Game {
       winTile: tile,
       honba: this.honba,
       riichiSticks: this.riichiSticks,
+      doraHan: result.doraHan || 0,
     };
 
     this.applyScore(playerIdx, result.payments);

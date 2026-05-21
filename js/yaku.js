@@ -835,6 +835,7 @@ function evaluateHand(hand, openMelds, winTile, winType, gameState) {
     pair: best.pair,
     payments,
     isYakuman,
+    doraHan: best.doraHan,
   };
 }
 
