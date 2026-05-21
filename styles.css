@@ -503,7 +503,7 @@ html, body {
 #controls button:disabled { opacity:0.4; cursor:default; transform:none; }
 #controls button.primary { background: var(--gold); border-color: #a08020; }
 #controls button.danger { background: var(--red); border-color: #992222; color:var(--text-light); }
-#controls button.auto-btn { background: #446688; border-color: #335577; color:var(--text-light); }
+#controls button.auto-btn { background: #446688; border-color: #335577; color:var(--text-light); position:fixed; bottom:1rem; left:1rem; z-index:50; }
 #controls button.auto-btn:hover { background: #5577aa; }
 
 /* ===== Result Screen ===== */
