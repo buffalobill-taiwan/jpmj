@@ -519,11 +519,12 @@ function checkChiitoitsu(handInfo, gameState) {
 
 function checkHonitsu(handInfo, gameState) {
   const suits = {};
-  for (const t of handInfo.hand || handInfo.tiles) {
+  const allTiles = [...(handInfo.hand || handInfo.tiles), ...handInfo.melds.flatMap(m => m.tiles)];
+  for (const t of allTiles) {
     if (t.suit !== 'honor') suits[t.suit] = true;
   }
   if (Object.keys(suits).length === 1) {
-    const hasHonors = handInfo.hand.some(t => t.isHonor);
+    const hasHonors = allTiles.some(t => t.isHonor);
     if (hasHonors) {
       const han = isMenzen(handInfo.melds) ? 3 : 2;
       return [{ name:'混一色', han }];
@@ -534,7 +535,8 @@ function checkHonitsu(handInfo, gameState) {
 
 function checkChinitsu(handInfo, gameState) {
   const suits = {};
-  for (const t of handInfo.hand || handInfo.tiles) {
+  const allTiles = [...(handInfo.hand || handInfo.tiles), ...handInfo.melds.flatMap(m => m.tiles)];
+  for (const t of allTiles) {
     suits[t.suit] = true;
   }
   if (Object.keys(suits).length === 1 && !suits.honor) {
