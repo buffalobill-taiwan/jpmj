@@ -438,14 +438,14 @@ function processAutoPlay() {
       if (!p.isRiichi) {
         for (let i = 0; i < p.hand.length; i++) {
           const testHand = p.hand.filter((_, j) => j !== i);
-          if (checkTenpai(testHand, p.melds) && aiDecideRiichi(game, 0)) {
+          if (checkTenpai(testHand, p.melds) && Math.random() < AI_DIFFICULTY.normal.riichiRate) {
             selectedTile = -1;
             game.humanRiichi(i);
             return;
           }
         }
       }
-      const idx = aiChooseDiscard(game, 0);
+      const idx = normalDiscard(game, 0);
       selectedTile = -1;
       game.humanDiscard(idx);
       return;
