@@ -78,6 +78,12 @@ jpmj/
 
 ## 最近修正
 
+### 孤立牌優先捨牌（this commit）
+- **新增 `isIsolated()`**：判斷牌是否孤立（單張 + 無同花色 ±2 以內的鄰牌）
+- **`expertDiscard`**：孤張字牌 +12000、孤張么九牌 +6000（大於 shanten step 10000）
+- **`normalDiscard`**：孤張字牌 +3000、孤張么九牌 +1500
+- 優先打孤立牌是標準麻將戰術（安全且無用），避免為了前進向聽數而拆有用搭子
+
 ### 多重修正（52a2822）
 - **checkToitoi/checkSanankou/checkHonroutou/checkSanshokuDoukou**：カン（type:'kan'）也視為刻子，修正這些役種在包含槓的牌型無法成立的問題
 - **buildAvailableCalls**：大明槓改為檢查其他玩家（非捨牌者），與 pon 同樣在手中 3 枚以上時提供選擇

@@ -285,6 +285,23 @@ function countVisibleTiles(game, tile) {
   return count;
 }
 
+// ===== Isolated Tile Detection =====
+
+function isIsolated(hand, tile) {
+  const counts = getCounts(hand);
+  if ((counts[tile.key()] || 0) !== 1) return false;
+  if (tile.isHonor) return true;
+  const s = tile.suit;
+  const v = tile.value;
+  for (let d = -2; d <= 2; d++) {
+    if (d === 0) continue;
+    const adj = v + d;
+    if (adj < 1 || adj > 9) continue;
+    if ((counts[s + adj] || 0) > 0) return false;
+  }
+  return true;
+}
+
 // ===== Discard Selection =====
 
 function expertDiscard(game, playerIdx) {
@@ -324,6 +341,11 @@ function expertDiscard(game, playerIdx) {
 
     if (indices.length >= 2) val += 50; // keep pairs
 
+    if (isIsolated(hand, tile)) {
+      if (tile.isHonor) val += 12000;
+      else if (tile.isTerminal) val += 6000;
+    }
+
     if (val > bestVal) {
       bestVal = val;
       bestIdx = indices[0];
@@ -360,6 +382,11 @@ function normalDiscard(game, playerIdx) {
     }
 
     if (indices.length >= 2) val += 10;
+
+    if (isIsolated(hand, tile)) {
+      if (tile.isHonor) val += 3000;
+      else if (tile.isTerminal) val += 1500;
+    }
 
     evals.push({ idx: indices[0], val, shanten });
   }
