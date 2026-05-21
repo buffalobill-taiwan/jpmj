@@ -148,12 +148,31 @@ html, body {
 }
 
 .opponent-area .tiles-row {
-  display:flex; gap:1px;
+  display:flex; gap:0;
 }
 
 .opponent-area .tile-char {
-  font-size: clamp(1.3rem, 2.2vw, 1.8rem);
+  font-size: clamp(1.6rem, 2.6vw, 2.1rem);
   opacity: 0.85;
+}
+
+/* Tighter tile spacing in hands & discards */
+.opponent-area .tiles-row .tile-char {
+  margin-right: -4px;
+}
+#opponent-left .tiles-row .tile-char,
+#opponent-right .tiles-row .tile-char {
+  margin-right: 0;
+  margin-bottom: -8px;
+}
+.opponent-discards .tile-char,
+#player-discards .tile-char {
+  margin-right: -4px;
+}
+#opponent-left .opponent-discards .tile-char,
+#opponent-right .opponent-discards .tile-char {
+  margin-right: 0;
+  margin-bottom: -8px;
 }
 
 #opponent-top {
@@ -184,16 +203,16 @@ html, body {
 
 .opponent-discards {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 1px;
+  grid-template-columns: repeat(12, max-content);
+  gap: 0;
   margin-top: 2px;
-  width: clamp(14rem, 28vw, 20rem);
+  width: max-content;
   height: clamp(3rem, 4vw, 4rem);
   align-content: start;
 }
 
 .opponent-discards .tile-char {
-  font-size: clamp(1.1rem, 1.8vw, 1.5rem);
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
   opacity:0.6;
 }
 
@@ -207,16 +226,16 @@ html, body {
 #opponent-left .tiles-row {
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 0;
 }
 
 #opponent-right .opponent-discards,
 #opponent-left .opponent-discards {
-  grid-template-columns: none;
+  grid-template-columns: max-content max-content;
   grid-template-rows: repeat(12, 1fr);
   grid-auto-flow: column;
-  height: auto;
-  width: 5rem;
+  height: min(18rem, 30vh);
+  width: auto;
 }
 
 #opponent-right .tiles-row .tile-char,
@@ -231,6 +250,13 @@ html, body {
   transform: rotate(90deg);
 }
 
+#opponent-left .opponent-hand-row {
+  flex-direction: column-reverse;
+}
+#opponent-right .opponent-hand-row {
+  flex-direction: column;
+}
+
 #opponent-right .opponent-melds,
 #opponent-left .opponent-melds {
   flex-direction: column;
@@ -240,14 +266,6 @@ html, body {
 #opponent-right .opponent-melds .meld-group,
 #opponent-left .opponent-melds .meld-group {
   flex-direction: column;
-  align-items: center;
-}
-
-#opponent-right .opponent-discards,
-#opponent-left .opponent-discards {
-  flex-direction: column;
-  max-width: none;
-  max-height: 300px;
   align-items: center;
 }
 
@@ -299,6 +317,13 @@ html, body {
   padding:1px 3px;
 }
 
+#dora-area .tile-back {
+  background: #2a5a3a;
+  color: #4a8a5a;
+  border-color: #1a3a2a;
+  opacity:0.7;
+}
+
 /* Player area (bottom) */
 #player-area {
   position:absolute;
@@ -319,13 +344,13 @@ html, body {
   position: absolute;
   right: 6px;
   bottom: 6px;
+  display: flex;
+  flex-direction: column;
   width: 180px;
   max-height: 200px;
-  overflow-y: auto;
   background: rgba(0,0,0,0.55);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 6px;
-  padding: 4px 6px;
   font-size: clamp(0.55rem, 0.75vw, 0.65rem);
   line-height: 1.4;
   font-family: inherit;
@@ -334,19 +359,40 @@ html, body {
   scrollbar-color: rgba(255,255,255,0.15) transparent;
 }
 
-#game-log .log-entry {
+#log-drag-handle {
+  cursor: grab;
+  user-select: none;
+  text-align: center;
+  padding: 2px 0 1px;
+  color: rgba(255,255,255,0.35);
+  font-size: 0.7rem;
+  line-height: 1;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+#log-drag-handle:active { cursor: grabbing; }
+
+#log-entries {
+  flex: 1;
+  overflow-y: auto;
+  padding: 3px 6px 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+}
+
+#log-entries .log-entry {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   opacity: 0.85;
 }
 
-#game-log .log-turn {
+#log-entries .log-turn {
   opacity: 0.5;
   margin-right: 2px;
 }
 
-#game-log .log-player {
+#log-entries .log-player {
   color: var(--gold);
   margin-right: 2px;
 }
@@ -449,6 +495,34 @@ html, body {
   flex-shrink: 0;
 }
 
+/* Tenpai indicator */
+.tenpai-indicator {
+  display: flex;
+  gap: 0.15em;
+  align-items: center;
+  align-self: flex-start;
+  background: rgba(0,0,0,0.75);
+  border: 1px solid var(--gold);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: clamp(0.65rem, 0.9vw, 0.75rem);
+  white-space: nowrap;
+  margin-top: 3px;
+}
+.tenpai-indicator .tenpai-label-main {
+  color: var(--gold);
+  font-weight: bold;
+  margin-right: 0.15em;
+}
+.tenpai-indicator .tenpai-tile {
+  margin-left: 0.1em;
+}
+.tenpai-indicator .tenpai-tile-name {
+  opacity: 0.55;
+  font-size: 0.85em;
+  margin-right: 0.3em;
+}
+
 #player-hand .last-draw-slot .tile-char {
   border-color: var(--gold);
   box-shadow: 0 0 6px var(--gold), 0 2px 4px var(--shadow);
@@ -457,16 +531,16 @@ html, body {
 /* Discard pile */
 #player-discards {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
-  gap: 1px;
+  grid-template-columns: repeat(12, max-content);
+  gap: 0;
   margin-bottom: 3px;
-  width: clamp(22rem, 38vw, 30rem);
+  width: max-content;
   height: clamp(5rem, 6vw, 6rem);
   align-content: start;
 }
 
 #player-discards .tile-char {
-  font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
   opacity:0.7;
 }
 
@@ -692,6 +766,6 @@ html, body {
 @media (max-width: 768px) {
   #player-hand .tile-char { font-size: clamp(1.8rem, 5.5vw, 2.5rem); }
   #controls button { padding: 0.3em 0.7em; font-size: clamp(0.65rem, 2vw, 0.8rem); }
-  .opponent-area .tile-char { font-size: clamp(0.9rem, 3vw, 1.2rem); }
+  .opponent-area .tile-char { font-size: clamp(1.1rem, 3.5vw, 1.5rem); }
   #result-content { min-width: 260px; padding: 1.5em; }
 }

@@ -287,6 +287,14 @@ function countVisibleTiles(game, tile) {
 
 // ===== Isolated Tile Detection =====
 
+function discardPriority(tile) {
+  if (tile.isHonor) return 4;
+  if (tile.isTerminal) return 3;
+  const v = tile.value;
+  if (v === 2 || v === 8) return 2;
+  return 1;
+}
+
 function isIsolated(hand, tile) {
   const counts = getCounts(hand);
   if ((counts[tile.key()] || 0) !== 1) return false;
@@ -330,8 +338,11 @@ function expertDiscard(game, playerIdx) {
       val = 100000 - shanten * 10000 + wq.quality * 10 + wq.count * 50;
     } else {
       const improve = countImprovingTiles(testHand, p.melds);
-      val = -shanten * 10000 + improve * 8;
+      val = -shanten * 100000 + improve * 8;
     }
+
+    const resultIsolated = countBlocks(testHand).isolated;
+    val -= resultIsolated * 200;
 
     const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
     if (hasThreat) {
@@ -342,10 +353,12 @@ function expertDiscard(game, playerIdx) {
     if (indices.length >= 2) val += 50; // keep pairs
 
     if (isIsolated(hand, tile)) {
-      if (tile.isHonor) val += 12000;
-      else if (tile.isTerminal) val += 6000;
-      else val += 2000;
+      if (tile.isHonor) val += 50000;
+      else if (tile.isTerminal) val += 30000;
+      else val += 10000;
     }
+
+    val += discardPriority(tile) * 5000;
 
     if (val > bestVal) {
       bestVal = val;
@@ -372,30 +385,33 @@ function normalDiscard(game, playerIdx) {
   for (const [k, indices] of Object.entries(uniq)) {
     const testHand = removeTiles(hand, k, 1);
     const tile = hand[indices[0]];
-    const waits = getWaitingTiles(testHand, p.melds);
-    const shanten = waits.length > 0 ? 0 : estimateShanten(testHand, p.melds);
+    const shantenEst = estimateShanten(testHand, p.melds);
+    const waits = shantenEst >= 2 ? [] : getWaitingTiles(testHand, p.melds);
+    const shanten = waits.length > 0 ? 0 : shantenEst;
+    const isolated = countBlocks(testHand).isolated;
 
-    let val = -shanten * 100 + (waits.length > 0 ? waits.length * 5 : 0);
+    let val = (isIsolated(hand, tile)
+      ? (tile.isHonor ? 500 : tile.isTerminal ? 300 : 100)
+      : 0)
+      + (waits.length > 0 ? Math.min(waits.length, 9) * 10 : 0)
+      - (hasThreat ? tileDangerLevel(game, tile, false) * 10 : 0)
+      + (indices.length >= 2 ? 50 : 0);
 
-    if (hasThreat) {
-      const danger = tileDangerLevel(game, tile, false);
-      val -= danger * 15;
-    }
-
-    if (indices.length >= 2) val += 10;
-
-    if (isIsolated(hand, tile)) {
-      if (tile.isHonor) val += 3000;
-      else if (tile.isTerminal) val += 1500;
-      else val += 500;
-    }
-
-    evals.push({ idx: indices[0], val, shanten });
+    evals.push({ idx: indices[0], val, shanten, isolated, priority: discardPriority(tile) });
   }
 
-  evals.sort((a, b) => b.val - a.val);
-  const bestVal = evals[0].val;
-  const candidates = evals.filter(e => e.val >= bestVal - 100);
+  evals.sort((a, b) =>
+    a.shanten - b.shanten ||
+    a.isolated - b.isolated ||
+    b.priority - a.priority ||
+    b.val - a.val
+  );
+  const bestShanten = evals[0].shanten;
+  const shantenCandidates = evals.filter(e => e.shanten === bestShanten);
+  const bestIsolated = shantenCandidates[0].isolated;
+  const isoCandidates = shantenCandidates.filter(e => e.isolated === bestIsolated);
+  const bestPriority = isoCandidates[0].priority;
+  const candidates = isoCandidates.filter(e => e.priority === bestPriority);
   return candidates.length > 0
     ? candidates[Math.floor(Math.random() * candidates.length)].idx
     : evals[0].idx;
@@ -469,8 +485,11 @@ function aiDecideCall(game, availableCalls) {
         } else if (call.type === 'kan') {
           handAfter = removeTiles(player.hand, call.tile.key(), 3);
         } else {
-          handAfter = removeTiles(player.hand, call.chiSets[0][0].key(), 1);
-          handAfter = removeTiles(handAfter, call.chiSets[0][1].key(), 1);
+          handAfter = [...player.hand];
+          for (const ct of call.chiSets[0]) {
+            if (ct.key() === call.tile.key()) continue;
+            handAfter = removeTiles(handAfter, ct.key(), 1);
+          }
         }
         const meldsAfter = [...player.melds, { type: call.type }];
         const shantenAfter = estimateShanten(handAfter, meldsAfter);
@@ -519,8 +538,14 @@ function aiDecideKan(game, playerIdx) {
   if (p.isRiichi) return false;
 
   const counts = getCounts(p.hand);
+  const shantenBefore = estimateShanten(p.hand, p.melds);
   for (const [k, c] of Object.entries(counts)) {
-    if (c === 4) return Math.random() < 0.5;
+    if (c === 4) {
+      const handAfter = removeTiles(p.hand, k, 4);
+      const meldsAfter = [...p.melds, { type: 'kan' }];
+      const shantenAfter = estimateShanten(handAfter, meldsAfter);
+      if (shantenAfter <= shantenBefore) return true;
+    }
   }
   return false;
 }

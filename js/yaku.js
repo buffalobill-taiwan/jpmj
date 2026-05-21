@@ -1,5 +1,14 @@
 // ===== Helper Functions =====
 
+const ALL_TILE_TYPES = (function() {
+  const tiles = [];
+  for (const suit of ['man','pin','sou']) {
+    for (let v = 1; v <= 9; v++) tiles.push(new Tile(suit, v));
+  }
+  for (let v = 1; v <= 7; v++) tiles.push(new Tile('honor', v));
+  return tiles;
+})();
+
 function getCounts(tiles) {
   const m = {};
   for (const t of tiles) m[t.key()] = (m[t.key()] || 0) + 1;
@@ -871,18 +880,10 @@ function isWinningHand(hand, openMelds) {
 
 function getWaitingTiles(hand, openMelds) {
   const waits = [];
-  const checked = {};
-  for (const suit of ['man','pin','sou','honor']) {
-    const max = suit === 'honor' ? 7 : 9;
-    for (let v = 1; v <= max; v++) {
-      const testTile = new Tile(suit, v);
-      const k = testTile.key();
-      if (checked[k]) continue;
-      checked[k] = true;
-      const testHand = hand.concat([testTile]);
-      if (isWinningHand(Tile.sortTiles(testHand), openMelds)) {
-        waits.push(testTile);
-      }
+  for (const testTile of ALL_TILE_TYPES) {
+    const testHand = hand.concat([testTile]);
+    if (isWinningHand(testHand, openMelds)) {
+      waits.push(testTile);
     }
   }
   return waits;

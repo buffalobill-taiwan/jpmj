@@ -50,7 +50,7 @@ class Game {
       this.players.push({
         name: i === 0 ? 'あなた' : i === 1 ? 'CPU1' : i === 2 ? 'CPU2' : 'CPU3',
         isHuman: i === 0,
-        difficulty: i === 0 ? null : this.options.difficulties[i - 1],
+        difficulty: i === 0 ? 'normal' : this.options.difficulties[i - 1],
         hand: [],
         melds: [],
         discards: [],
@@ -91,6 +91,7 @@ class Game {
     for (const p of this.players) {
       p.hand = Tile.sortTiles(p.hand);
     }
+    this.players[this.dealerIndex].hand.push(this.wall.dealerExtraTile);
     this.players[this.dealerIndex].lastDraw = this.wall.dealerExtraTile;
     this.currentPlayer = this.dealerIndex;
     this.lastDiscard = null;
@@ -223,6 +224,7 @@ class Game {
     const p = this.players[playerIdx];
     const tile = p.hand.splice(tileIdx, 1)[0];
     if (!tile) return;
+    p.hand = Tile.sortTiles(p.hand);
     p.discards.push(tile);
     this.lastDiscard = tile;
     this.lastDiscardPlayer = playerIdx;
@@ -563,22 +565,27 @@ class Game {
         const ponKey = m.tiles[0].key();
         if ((counts[ponKey] || 0) >= 1) {
           const tile = p.hand.find(t => t.key() === ponKey);
-          if (tile && Math.random() < 0.3) {
-            const newHand = [];
-            let removed = false;
-            for (const t of p.hand) {
-              if (!removed && t.key() === ponKey) { removed = true; }
-              else { newHand.push(t); }
+          if (tile) {
+            const shantenBefore = estimateShanten(p.hand, p.melds);
+            const handAfter = removeTiles(p.hand, ponKey, 1);
+            const shantenAfter = estimateShanten(handAfter, p.melds);
+            if (shantenAfter <= shantenBefore) {
+              const newHand = [];
+              let removed = false;
+              for (const t of p.hand) {
+                if (!removed && t.key() === ponKey) { removed = true; }
+                else { newHand.push(t); }
+              }
+              p.hand = newHand;
+              m.type = 'kan';
+              m.tiles.push(tile);
+              m.isKan = true;
+              this.wall.addDoraIndicator();
+              this.addLog(playerIdx, '加槓', tile.name);
+              this.availableActions = [];
+              this.phase = 'rinshan';
+              return true;
             }
-            p.hand = newHand;
-            m.type = 'kan';
-            m.tiles.push(tile);
-            m.isKan = true;
-            this.wall.addDoraIndicator();
-            this.addLog(playerIdx, '加槓', tile.name);
-            this.availableActions = [];
-            this.phase = 'rinshan';
-            return true;
           }
         }
       }
