@@ -392,8 +392,8 @@ function normalDiscard(game, playerIdx) {
   }
 
   evals.sort((a, b) => b.val - a.val);
-  const bestShanten = evals[0].shanten;
-  const candidates = evals.filter(e => e.shanten === bestShanten);
+  const bestVal = evals[0].val;
+  const candidates = evals.filter(e => e.val >= bestVal - 100);
   return candidates.length > 0
     ? candidates[Math.floor(Math.random() * candidates.length)].idx
     : evals[0].idx;
