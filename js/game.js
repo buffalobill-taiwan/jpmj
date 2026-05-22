@@ -264,7 +264,7 @@ class Game {
         calls.push({ type: 'ron', playerIdx: pIdx, tile });
       }
       if (p.isHuman) {
-        if (this.isFuriten(pIdx)) {
+        if (this.isFuriten(pIdx) && (ronCheck || canFormCompleteHand(hand, p.melds, tile))) {
           calls.push({ type: 'ron-furiten', playerIdx: pIdx, tile });
         } else if (!ronCheck && canFormCompleteHand(hand, p.melds, tile)) {
           calls.push({ type: 'ron-no-yaku', playerIdx: pIdx, tile });
