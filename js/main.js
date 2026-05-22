@@ -799,8 +799,9 @@ function showRoundResult() {
       for (const ti of r.tenpaiPlayers) {
         paymentLines.push(`${game.players[ti].name}: +${r.notenPayment}`);
       }
+      const paymentPerNoten = 3000 / r.notenPlayers.length;
       for (const ni of r.notenPlayers) {
-        paymentLines.push(`${game.players[ni].name}: -1500`);
+        paymentLines.push(`${game.players[ni].name}: -${paymentPerNoten}`);
       }
     }
 

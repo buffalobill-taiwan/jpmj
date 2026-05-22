@@ -726,9 +726,9 @@ class Game {
 
     let notenPayment = 0;
     if (notenPlayers.length > 0 && tenpaiPlayers.length > 0) {
-      const paymentPerNoten = 1500;
-      const total = paymentPerNoten * notenPlayers.length;
-      notenPayment = Math.floor(total / tenpaiPlayers.length);
+      const paymentPerNoten = 3000 / notenPlayers.length;
+      const total = 3000;
+      notenPayment = total / tenpaiPlayers.length;
       for (const ti of tenpaiPlayers) {
         this.players[ti].score += notenPayment;
       }
