@@ -2,6 +2,8 @@
 
 A single-player Japanese Mahjong game (Riichi Mahjong). Pure HTML+JS+CSS, zero build tools and no external dependencies.
 
+Play online: <https://buffalobill-taiwan.github.io/jpmj/>
+
 ## Quick Start
 
 ```bash
