@@ -161,7 +161,7 @@ function renderCenterInfo() {
   for (let i = indicators.length; i < maxDoraPositions; i++) {
     const span = document.createElement('span');
     span.className = 'tile-char tile-back';
-    span.textContent = '🀫';
+    span.textContent = '🀫\uFE0F';
     doraArea.appendChild(span);
   }
 }
@@ -199,7 +199,7 @@ function renderPlayerArea() {
     } else {
       span.style.visibility = 'hidden';
       span.style.pointerEvents = 'none';
-      span.textContent = '🀫';
+      span.textContent = '🀫\uFE0F';
     }
     discardsDiv.appendChild(span);
   }
@@ -261,7 +261,7 @@ function renderPlayerArea() {
     slot.style.pointerEvents = 'none';
     const span = document.createElement('span');
     span.className = 'tile-char';
-    span.textContent = '🀫';
+    span.textContent = '🀫\uFE0F';
     slot.appendChild(span);
     handDiv.appendChild(slot);
   }
@@ -341,9 +341,9 @@ function renderOpponent(areaId, playerIdx, reveal) {
     span.className = 'tile-char';
     if (t === null) {
       span.style.visibility = 'hidden';
-      span.textContent = '🀫';
+      span.textContent = '🀫\uFE0F';
     } else {
-      span.textContent = reveal ? t.char : '🀫';
+      span.textContent = reveal ? t.char : '🀫\uFE0F';
     }
     handDiv.appendChild(span);
   }
@@ -376,7 +376,7 @@ function renderOpponent(areaId, playerIdx, reveal) {
     } else {
       span.style.visibility = 'hidden';
       span.style.pointerEvents = 'none';
-      span.textContent = '🀫';
+      span.textContent = '🀫\uFE0F';
     }
     if (areaId === 'opponent-right') {
       span.style.gridRow = String(12 - (i % 12));

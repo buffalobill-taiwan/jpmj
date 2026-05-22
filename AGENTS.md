@@ -63,12 +63,9 @@ dealer_first_discard → draw → discard → call_pending → advanceTurn → d
 //           isRiichi, ippantumRound, riichiBet, isTenpai, lastDraw, seatWind }
 // GameState: { isDealer, seatWind, roundWind, winType, winTile, isRiichi, 
 //             isIppatsu, isTenhou, isChiihou, isRenhou, doraIndicators }
+```
 
 ## CSS
 
 主題色：`--table-green: #0a5c2a`, `--gold: #c9a84c`, `--tile-back: #f5f0e0`
 牌背 unicode：`🀫` (U+1F02B)
-
-## .opencode/
-
-`/home/nuweb/playground/jpmj/.opencode/` 內含 opencode plugin 依賴 (`@opencode-ai/plugin`)。`plans/` 目錄已存在但為空。

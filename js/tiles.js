@@ -26,7 +26,7 @@ class Tile {
   }
 
   get char() {
-    return String.fromCodePoint(this.codePoint);
+    return String.fromCodePoint(this.codePoint) + '\uFE0F';
   }
 
   get name() {
