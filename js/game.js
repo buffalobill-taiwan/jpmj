@@ -132,7 +132,8 @@ class Game {
       p.hand.push(tile);
       p.hand = Tile.sortTiles(p.hand);
       p.lastDraw = tile;
-      this.addLog(this.currentPlayer, '摸', tile.name);
+      const isHuman = this.players[this.currentPlayer].isHuman;
+      this.addLog(this.currentPlayer, isHuman ? '摸' : '摸牌', isHuman ? tile.name : '');
       this.turnCount++;
 
       if (this.checkTsumo(this.currentPlayer)) {
