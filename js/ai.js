@@ -380,7 +380,6 @@ function normalDiscard(game, playerIdx) {
   }
 
   const evals = [];
-  const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
 
   for (const [k, indices] of Object.entries(uniq)) {
     const testHand = removeTiles(hand, k, 1);
@@ -394,7 +393,6 @@ function normalDiscard(game, playerIdx) {
       ? (tile.isHonor ? 500 : tile.isTerminal ? 300 : 100)
       : 0)
       + (waits.length > 0 ? Math.min(waits.length, 9) * 10 : 0)
-      - (hasThreat ? tileDangerLevel(game, tile, false) * 10 : 0)
       + (indices.length >= 2 ? 50 : 0);
 
     evals.push({ idx: indices[0], val, shanten, isolated, priority: discardPriority(tile) });

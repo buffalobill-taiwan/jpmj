@@ -77,6 +77,14 @@ dealer_first_discard → draw → discard → call_pending → advanceTurn → d
 //                              notenPayment, riichiPerTenpai, isRenchan, nextRoundLabel }
 ```
 
+## UI Conventions
+
+| 行為 | 場所 | 規則 |
+|------|------|------|
+| 滿貫以上表示 | main.js `getRankLabel` | 5飜=満貫、6-7=跳満、8-10=倍満、11-12=三倍満、13+=数え役満、役滿=役満/N倍役満 |
+| 滿貫以上 yaku 列表 | main.js `showRoundResult` | 僅列役種名稱，不顯示飜數、不含「合計 X飜 Y符」 |
+| 點數支付明細 | main.js `showRoundResult` | ツモ/ロン皆顯示每位玩家的 +/- 分數變動 |
+
 ## CSS
 
 主題色：`--table-green: #0a5c2a`, `--gold: #c9a84c`, `--tile-back: #f5f0e0`

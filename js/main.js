@@ -752,6 +752,20 @@ function onTileClick(idx) {
 
 // ===== Round Result =====
 
+function getRankLabel(totalHan, isYakuman, yaku) {
+  if (isYakuman) {
+    const count = yaku.filter(y => y.isYakuman).length;
+    if (count >= 2) return count + '倍役満';
+    return '役満';
+  }
+  if (totalHan >= 13) return '数え役満';
+  if (totalHan >= 11) return '三倍満';
+  if (totalHan >= 8) return '倍満';
+  if (totalHan >= 6) return '跳満';
+  if (totalHan >= 5) return '満貫';
+  return null;
+}
+
 function showRoundResult() {
   renderOpponent('opponent-right', 1, true);
   renderOpponent('opponent-top', 2, true);
@@ -795,35 +809,53 @@ function showRoundResult() {
   } else {
     const winner = game.players[game.roundResult.winner];
     const r = game.roundResult;
-    let yakuStr = r.yaku.map(y => `${y.name}（${y.isYakuman ? '役滿' : y.han + '飜'}）`).join('<br>');
-    if (r.doraHan > 0) yakuStr += `<br>ドラ ${r.doraHan}飜`;
-    if (r.totalHan > 0) yakuStr += `<br>合計 ${r.totalHan}飜 ${r.fu}符`;
+
+    const rankLabel = getRankLabel(r.totalHan, r.isYakuman, r.yaku);
+    let yakuStr;
+    if (rankLabel) {
+      yakuStr = r.yaku.map(y => y.name).join('<br>');
+      if (r.doraHan > 0) yakuStr += `<br>ドラ ${r.doraHan}飜`;
+    } else {
+      yakuStr = r.yaku.map(y => `${y.name}（${y.isYakuman ? '役滿' : y.han + '飜'}）`).join('<br>');
+      if (r.doraHan > 0) yakuStr += `<br>ドラ ${r.doraHan}飜`;
+      if (r.totalHan > 0) yakuStr += `<br>合計 ${r.totalHan}飜 ${r.fu}符`;
+    }
 
     let scoreStr = '';
+    let paymentDetailStr = '';
     if (r.payments.type === 'tsumo') {
       const isDealerWinner = game.players[game.roundResult.winner].seatWind === 1;
       const dealerIdx = game.dealerIndex;
-      let details = '';
+      const parts = [];
+      parts.push(`${winner.name}: +${r.payments.total}`);
       for (let i = 0; i < 4; i++) {
         if (i === game.roundResult.winner) continue;
         const amt = i === dealerIdx ? r.payments.dealerPayment : r.payments.childPayment;
-        details += `${game.players[i].name}: ${amt} `;
+        parts.push(`${game.players[i].name}: -${amt}`);
       }
-      scoreStr = `ツモ ${r.payments.total}点 (${details})`;
+      scoreStr = `ツモ ${r.payments.total}点`;
+      paymentDetailStr = parts.join('、');
     } else {
       const discPlayer = game.players[game.lastDiscardPlayer];
-      scoreStr = `ロン ${game.lastDiscardPlayer >= 0 ? discPlayer.name + '→' : ''}${r.payments.discarderPayment}点`;
+      scoreStr = `ロン ${r.payments.discarderPayment}点`;
+      if (game.lastDiscardPlayer >= 0) {
+        paymentDetailStr = `${winner.name}: +${r.payments.discarderPayment}、${discPlayer.name}: -${r.payments.discarderPayment}`;
+      }
     }
-    const rExtras = [];
-    if (r.honba > 0) rExtras.push(`本場${r.honba}`);
-    if (r.riichiSticks > 0) rExtras.push(`立直${r.riichiSticks}`);
-    if (rExtras.length > 0) scoreStr += `（${rExtras.join(' ')}）`;
+
+    const detailLine = rankLabel || (r.totalHan + '飜 ' + r.fu + '符');
+
+    const extraDetails = [];
+    if (r.honba > 0) extraDetails.push(`本場${r.honba}`);
+    if (r.riichiSticks > 0) extraDetails.push(`立直${r.riichiSticks}`);
 
     content.innerHTML = `
       <h3>${winner.name} ${r.winType === 'tsumo' ? 'ツモ' : 'ロン'}！</h3>
       <div class="score-big">${scoreStr}</div>
       <div class="yaku-list">${yakuStr}</div>
-      <div class="detail">${r.isYakuman ? '🎉 役滿！' : r.totalHan + '飜' + r.fu + '符'}</div>
+      <div class="detail">${detailLine}</div>
+      ${paymentDetailStr ? `<div class="detail">${paymentDetailStr}</div>` : ''}
+      ${extraDetails.length > 0 ? `<div class="detail">${extraDetails.join(' ')}</div>` : ''}
       <div class="detail">${game.roundLabel}</div>
       <button id="next-round-btn">次局へ</button>
     `;
