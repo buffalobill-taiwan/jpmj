@@ -838,6 +838,7 @@ function showRoundResult() {
       yakuRows += `<tr><td>${y.name}</td><td>${hanStr}</td></tr>`;
     }
     if (r.doraHan > 0) yakuRows += `<tr><td>ドラ</td><td>${r.doraHan}飜</td></tr>`;
+    if (r.uraDoraHan > 0) yakuRows += `<tr><td>裏ドラ</td><td>${r.uraDoraHan}飜</td></tr>`;
     if (r.totalHan > 0) yakuRows += `<tr class="yaku-total"><td>合計</td><td>${rankLabel || (r.totalHan + '飜 ' + r.fu + '符')}</td></tr>`;
     const yakuStr = `<table class="yaku-table">${yakuRows}</table>`;
 

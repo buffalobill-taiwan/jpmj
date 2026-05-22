@@ -813,12 +813,14 @@ function evaluateHand(hand, openMelds, winTile, winType, gameState) {
     const standaloneYaku = checkStandaloneYaku(handInfo, { ...gameState, winType, winTile });
     const fu = 25;
     const doraHan = gameState && gameState.doraIndicators ? countDora(allTiles, gameState.doraIndicators) : 0;
-    const totalHan = yaku.reduce((s, y) => s + y.han, 0) + doraHan;
+    const uraDoraHan = gameState && gameState.uraDoraIndicators && gameState.isRiichi ? countDora(allTiles, gameState.uraDoraIndicators) : 0;
+    const totalHan = yaku.reduce((s, y) => s + y.han, 0) + doraHan + uraDoraHan;
     handInfo.yaku = yaku;
     handInfo.standaloneYaku = standaloneYaku;
     handInfo.fu = fu;
     handInfo.totalHan = totalHan;
     handInfo.doraHan = doraHan;
+    handInfo.uraDoraHan = uraDoraHan;
     candidates.push(handInfo);
   }
 
@@ -859,12 +861,14 @@ function evaluateHand(hand, openMelds, winTile, winType, gameState) {
     const standaloneYaku = checkStandaloneYaku(handInfo, { ...gameState, winType, winTile });
     const fu = calculateFu(handInfo, { ...gameState, winType, winTile });
     const doraHan = gameState && gameState.doraIndicators ? countDora(allTiles, gameState.doraIndicators) : 0;
-    const totalHan = yaku.reduce((s, y) => s + y.han, 0) + doraHan;
+    const uraDoraHan = gameState && gameState.uraDoraIndicators && gameState.isRiichi ? countDora(allTiles, gameState.uraDoraIndicators) : 0;
+    const totalHan = yaku.reduce((s, y) => s + y.han, 0) + doraHan + uraDoraHan;
     handInfo.yaku = yaku;
     handInfo.standaloneYaku = standaloneYaku;
     handInfo.fu = fu;
     handInfo.totalHan = totalHan;
     handInfo.doraHan = doraHan;
+    handInfo.uraDoraHan = uraDoraHan;
     candidates.push(handInfo);
   }
 
@@ -889,6 +893,7 @@ function evaluateHand(hand, openMelds, winTile, winType, gameState) {
     payments,
     isYakuman,
     doraHan: best.doraHan,
+    uraDoraHan: best.uraDoraHan || 0,
   };
 }
 

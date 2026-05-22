@@ -668,6 +668,7 @@ class Game {
       honba: this.honba,
       riichiSticks: this.riichiSticks,
       doraHan: result.doraHan || 0,
+      uraDoraHan: result.uraDoraHan || 0,
       isRenchan,
       nextRoundLabel,
     };
@@ -799,6 +800,7 @@ class Game {
       isHaitei: this.wall.isExhausted() && winType === 'tsumo',
       isHoutei: this.wall.isExhausted() && winType === 'ron',
       doraIndicators: this.wall.getDoraIndicators(),
+      uraDoraIndicators: this.wall.getUraDoraIndicators(),
     };
   }
 
