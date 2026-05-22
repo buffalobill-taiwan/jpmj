@@ -1,6 +1,7 @@
 // ===== State Management =====
 
 const SCREEN = { TITLE:0, GAME:1, RESULT:2 };
+const TICK = 300;
 
 let currentScreen = SCREEN.TITLE;
 let game = null;
@@ -106,7 +107,7 @@ function startGame() {
 function continueGame() {
   if (!game) return;
   if (game.gameOver) { autoPlay = false; showFinalResult(); return; }
-  if (game.roundOver) { autoPlay = false; setTimeout(() => showRoundResult(), 300); return; }
+  if (game.roundOver) { autoPlay = false; setTimeout(() => showRoundResult(), TICK); return; }
 
   renderGame();
   const needHuman = game.advance();
@@ -114,16 +115,16 @@ function continueGame() {
 
   if (game.roundOver) {
     autoPlay = false;
-    setTimeout(() => showRoundResult(), 300);
+    setTimeout(() => showRoundResult(), TICK);
     return;
   }
 
   if (!needHuman) {
-    setTimeout(continueGame, 300);
+    setTimeout(continueGame, TICK);
   } else if (autoPlay) {
     processAutoPlay();
     renderGame();
-    setTimeout(continueGame, 300);
+    setTimeout(continueGame, TICK);
   }
 }
 
