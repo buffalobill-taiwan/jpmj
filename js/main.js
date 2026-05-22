@@ -216,7 +216,7 @@ function renderPlayerArea() {
   handDiv.innerHTML = '';
 
   const drawnTile = p.lastDraw;
-  const drawnInHand = drawnTile ? p.hand.findIndex(t => t.equals(drawnTile)) : -1;
+  const drawnInHand = drawnTile ? p.hand.findIndex(t => t === drawnTile) : -1;
 
   for (let i = 0; i < p.hand.length; i++) {
     if (i === drawnInHand) continue;
@@ -346,7 +346,7 @@ function renderOpponent(areaId, playerIdx, reveal) {
   } else {
     /* normal play: separate drawn tile into slot */
     const drawnTile = p.lastDraw;
-    const drawnIdx = drawnTile ? p.hand.findIndex(t => t.equals(drawnTile)) : -1;
+    const drawnIdx = drawnTile ? p.hand.findIndex(t => t === drawnTile) : -1;
     const nonDrawn = [];
     for (let i = 0; i < p.hand.length; i++) {
       if (i !== drawnIdx) nonDrawn.push(p.hand[i]);
