@@ -698,6 +698,20 @@ html, body {
   font-size: clamp(0.75rem, 1vw, 0.85rem);
   opacity:0.8;
 }
+#round-result-content .yaku-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+#round-result-content .yaku-table td {
+  padding: 0.1em 0.3em;
+}
+#round-result-content .yaku-table td:last-child {
+  text-align: right;
+}
+#round-result-content .yaku-total td {
+  font-weight: bold;
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
 
 #round-result-content .score-big {
   font-size: clamp(1.3rem, 2.5vw, 2rem);
