@@ -1,7 +1,7 @@
 // ===== State Management =====
 
 const SCREEN = { TITLE:0, GAME:1, RESULT:2 };
-const TICK = 300;
+const TICK = 100;
 
 let currentScreen = SCREEN.TITLE;
 let game = null;
