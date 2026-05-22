@@ -143,7 +143,12 @@ function renderGame() {
 
 function renderCenterInfo() {
   const ci = document.getElementById('center-info');
-  ci.querySelector('.round-label').textContent = `${game.roundLabel} ${game.roundWindName}風`;
+  let rLabel = `${game.roundLabel} ${game.roundWindName}風`;
+  const extras = [];
+  if (game.honba > 0) extras.push(`連莊 本場${game.honba}`);
+  if (game.riichiSticks > 0) extras.push(`立直${game.riichiSticks}`);
+  if (extras.length > 0) rLabel += ' ' + extras.join(' ');
+  ci.querySelector('.round-label').textContent = rLabel;
 
   const wallCount = game.wall.getRemainingCount();
   ci.querySelector('.wall-count').textContent = `殘牌 ${wallCount} 張`;
@@ -169,7 +174,9 @@ function renderCenterInfo() {
 function renderPlayerArea() {
   const p = game.players[0];
 
-  document.querySelector('#player-info .player-name').textContent = `${p.name} (${['東','南','西','北'][p.seatWind-1]})`;
+  const pNameEl = document.querySelector('#player-info .player-name');
+  pNameEl.textContent = `${p.name} (${['東','南','西','北'][p.seatWind-1]})`;
+  pNameEl.classList.toggle('riichi-active', p.isRiichi);
   document.querySelector('#player-info .player-score').textContent = `${p.score}点`;
 
   const meldsDiv = document.getElementById('player-melds');
@@ -280,14 +287,31 @@ function renderPlayerArea() {
     const indicator = document.createElement('div');
     indicator.className = 'tenpai-indicator';
 
+    const waitYaku = {};
+    for (const w of waits) {
+      const ronGs = game.getGameState(0, w, 'ron');
+      const ronResult = evaluateHand(tenpaiHand, p.melds, w, 'ron', ronGs);
+      if (ronResult && ronResult.yaku.length > 0) { waitYaku[w.key()] = true; continue; }
+      const tsumoGs = game.getGameState(0, w, 'tsumo');
+      const tsumoResult = evaluateHand(tenpaiHand, p.melds, w, 'tsumo', tsumoGs);
+      if (tsumoResult && tsumoResult.yaku.length > 0) { waitYaku[w.key()] = true; continue; }
+      waitYaku[w.key()] = false;
+    }
+    const hasYaku = Object.values(waitYaku).some(v => v);
+    const isFuriten = waits.some(w => p.discards.some(d => d.key() === w.key()));
+
     const label = document.createElement('span');
-    label.className = 'tenpai-label-main';
-    label.textContent = '聽';
+    const noYaku = !hasYaku;
+    label.className = 'tenpai-label-main' + (noYaku || isFuriten ? ' tenpai-warning' : '');
+    label.textContent = noYaku ? '聽（無役）' : isFuriten ? '聽（振聽）' : '聽';
     indicator.appendChild(label);
 
     for (const w of waits) {
       const tileSpan = document.createElement('span');
-      tileSpan.className = 'tenpai-tile';
+      let cls = 'tenpai-tile';
+      if (!waitYaku[w.key()]) cls += ' tenpai-no-yaku';
+      if (p.discards.some(d => d.key() === w.key())) cls += ' furiten-wait';
+      tileSpan.className = cls;
       tileSpan.textContent = w.char;
       indicator.appendChild(tileSpan);
 
@@ -306,7 +330,9 @@ function renderOpponent(areaId, playerIdx, reveal) {
   const p = game.players[playerIdx];
   if (!p) return;
 
-  area.querySelector('.player-name').textContent = `${p.name} (${['東','南','西','北'][p.seatWind-1]})`;
+  const oNameEl = area.querySelector('.player-name');
+  oNameEl.textContent = `${p.name} (${['東','南','西','北'][p.seatWind-1]})`;
+  oNameEl.classList.toggle('riichi-active', p.isRiichi);
   area.querySelector('.player-score').textContent = `${p.score}点`;
 
   const handDiv = area.querySelector('.tiles-row');
@@ -735,11 +761,35 @@ function showRoundResult() {
   const content = overlay.querySelector('#round-result-content');
 
   if (game.roundResult.winType === 'exhaustive') {
+    const r = game.roundResult;
+    const tenpaiStr = r.tenpaiPlayers.length > 0 ? r.tenpaiPlayers.map(i => game.players[i].name).join('、') : '無';
+    const notenStr = r.notenPlayers.length > 0 ? r.notenPlayers.map(i => game.players[i].name).join('、') : '無';
+
+    let paymentStr = '';
+    if (r.tenpaiPlayers.length > 0 && r.notenPlayers.length > 0) {
+      paymentStr = `<div class="detail">不聽罰符：聽牌者各 +${r.notenPayment}点、不聽者各 -1500点</div>`;
+    }
+
+    let riichiStr = '';
+    if (r.preDistributeRiichiSticks > 0) {
+      if (r.tenpaiPlayers.length > 0) {
+        riichiStr = `<div class="detail">立直棒 ${r.preDistributeRiichiSticks} 本（聽牌者各 +${r.riichiPerTenpai}点）</div>`;
+      } else {
+        riichiStr = `<div class="detail">立直棒 ${r.preDistributeRiichiSticks} 本（保留至次局）</div>`;
+      }
+    }
+
+    const honbaStr = r.honba > 0 ? `<div class="detail">本場：${r.honba}</div>` : '';
+    const renchanStr = r.isRenchan ? '連莊（親家聽牌）' : '輪莊（親家不聽）';
+
     content.innerHTML = `
       <h3>流局</h3>
-      <div class="detail">聽牌：${game.roundResult.tenpaiPlayers.map(i => game.players[i].name).join('、') || '無'}</div>
-      <div class="detail">不聽：${game.roundResult.notenPlayers.map(i => game.players[i].name).join('、') || '無'}</div>
-      <div class="detail">本場：${game.roundResult.honba}</div>
+      <div class="detail">聽牌：${tenpaiStr}</div>
+      <div class="detail">不聽：${notenStr}</div>
+      ${paymentStr}
+      ${riichiStr}
+      ${honbaStr}
+      <div class="detail">${renchanStr} → ${r.nextRoundLabel}</div>
       <button id="next-round-btn">次局へ</button>
     `;
   } else {
@@ -764,7 +814,10 @@ function showRoundResult() {
       const discPlayer = game.players[game.lastDiscardPlayer];
       scoreStr = `ロン ${game.lastDiscardPlayer >= 0 ? discPlayer.name + '→' : ''}${r.payments.discarderPayment}点`;
     }
-    if (r.honba > 0) scoreStr += `（本場${r.honba}）`;
+    const rExtras = [];
+    if (r.honba > 0) rExtras.push(`本場${r.honba}`);
+    if (r.riichiSticks > 0) rExtras.push(`立直${r.riichiSticks}`);
+    if (rExtras.length > 0) scoreStr += `（${rExtras.join(' ')}）`;
 
     content.innerHTML = `
       <h3>${winner.name} ${r.winType === 'tsumo' ? 'ツモ' : 'ロン'}！</h3>

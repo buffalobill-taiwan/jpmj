@@ -254,34 +254,36 @@ class Game {
       const hand = p.hand;
 
       const ronCheck = evaluateHand(hand, p.melds, tile, 'ron', this.getGameState(pIdx, tile, 'ron'));
-      if (ronCheck) {
+      if (ronCheck && !this.isFuriten(pIdx)) {
         calls.push({ type: 'ron', playerIdx: pIdx, tile });
       }
 
-      const handCounts = getCounts(hand);
-      const tileKey = tile.key();
-      if ((handCounts[tileKey] || 0) >= 2) {
-        calls.push({ type: 'pon', playerIdx: pIdx, tile });
-        if ((handCounts[tileKey] || 0) >= 3) {
-          calls.push({ type: 'kan', playerIdx: pIdx, tile, isCalled: true });
+      if (!this.wall.isExhausted()) {
+        const handCounts = getCounts(hand);
+        const tileKey = tile.key();
+        if ((handCounts[tileKey] || 0) >= 2) {
+          calls.push({ type: 'pon', playerIdx: pIdx, tile });
+          if ((handCounts[tileKey] || 0) >= 3) {
+            calls.push({ type: 'kan', playerIdx: pIdx, tile, isCalled: true });
+          }
         }
-      }
 
-      if (i === 1 && tile.suit !== 'honor') {
-        const v = tile.value;
-        const s = tile.suit;
-        const chiSets = [];
-        if (v >= 3 && findTile(hand, s, v-2) && findTile(hand, s, v-1)) {
-          chiSets.push([new Tile(s, v-2), new Tile(s, v-1), tile]);
-        }
-        if (v >= 2 && v <= 8 && findTile(hand, s, v-1) && findTile(hand, s, v+1)) {
-          chiSets.push([new Tile(s, v-1), tile, new Tile(s, v+1)]);
-        }
-        if (v <= 7 && findTile(hand, s, v+1) && findTile(hand, s, v+2)) {
-          chiSets.push([tile, new Tile(s, v+1), new Tile(s, v+2)]);
-        }
-        if (chiSets.length > 0) {
-          calls.push({ type: 'chi', playerIdx: pIdx, tile, chiSets });
+        if (i === 1 && tile.suit !== 'honor') {
+          const v = tile.value;
+          const s = tile.suit;
+          const chiSets = [];
+          if (v >= 3 && findTile(hand, s, v-2) && findTile(hand, s, v-1)) {
+            chiSets.push([new Tile(s, v-2), new Tile(s, v-1), tile]);
+          }
+          if (v >= 2 && v <= 8 && findTile(hand, s, v-1) && findTile(hand, s, v+1)) {
+            chiSets.push([new Tile(s, v-1), tile, new Tile(s, v+1)]);
+          }
+          if (v <= 7 && findTile(hand, s, v+1) && findTile(hand, s, v+2)) {
+            chiSets.push([tile, new Tile(s, v+1), new Tile(s, v+2)]);
+          }
+          if (chiSets.length > 0) {
+            calls.push({ type: 'chi', playerIdx: pIdx, tile, chiSets });
+          }
         }
       }
     }
@@ -609,6 +611,7 @@ class Game {
   }
 
   checkRon(playerIdx, tile) {
+    if (this.isFuriten(playerIdx)) return null;
     const p = this.players[playerIdx];
     const result = evaluateHand(
       p.hand, p.melds, tile, 'ron',
@@ -634,6 +637,10 @@ class Game {
     if (!result) return;
 
     this.winner = playerIdx;
+    const isRenchan = playerIdx === this.dealerIndex;
+    const nextRoundNum = isRenchan ? this.roundNumber : this.roundNumber + 1;
+    const nextWind = ['東', '南', '西', '北'][Math.floor(nextRoundNum / 4) % 4];
+    const nextRoundLabel = `${nextWind}${(nextRoundNum % 4) + 1}局`;
     this.roundResult = {
       winner: playerIdx,
       winType,
@@ -646,6 +653,8 @@ class Game {
       honba: this.honba,
       riichiSticks: this.riichiSticks,
       doraHan: result.doraHan || 0,
+      isRenchan,
+      nextRoundLabel,
     };
 
     this.applyScore(playerIdx, result.payments);
@@ -700,17 +709,38 @@ class Game {
       else notenPlayers.push(i);
     }
 
+    let notenPayment = 0;
     if (notenPlayers.length > 0 && tenpaiPlayers.length > 0) {
       const paymentPerNoten = 1500;
       const total = paymentPerNoten * notenPlayers.length;
-      const perTenpai = Math.floor(total / tenpaiPlayers.length);
+      notenPayment = Math.floor(total / tenpaiPlayers.length);
       for (const ti of tenpaiPlayers) {
-        this.players[ti].score += perTenpai;
+        this.players[ti].score += notenPayment;
       }
       for (const ni of notenPlayers) {
         this.players[ni].score -= paymentPerNoten;
       }
     }
+
+    const preDistributeRiichiSticks = this.riichiSticks;
+    let riichiPerTenpai = 0;
+    if (tenpaiPlayers.length > 0) {
+      const totalRiichi = preDistributeRiichiSticks * 1000;
+      if (totalRiichi > 0) {
+        riichiPerTenpai = Math.floor(totalRiichi / tenpaiPlayers.length);
+        for (const ti of tenpaiPlayers) {
+          this.players[ti].score += riichiPerTenpai;
+        }
+      }
+      this.riichiSticks = 0;
+    }
+    for (const p of this.players) p.riichiBet = 0;
+
+    const dealerTenpai = tenpaiPlayers.includes(this.dealerIndex);
+    const isRenchan = dealerTenpai;
+    const nextRoundNum = isRenchan ? this.roundNumber : this.roundNumber + 1;
+    const nextWind = ['東', '南', '西', '北'][Math.floor(nextRoundNum / 4) % 4];
+    const nextRoundLabel = `${nextWind}${(nextRoundNum % 4) + 1}局`;
 
     this.roundResult = {
       winner: -1,
@@ -718,12 +748,25 @@ class Game {
       tenpaiPlayers,
       notenPlayers,
       honba: this.honba,
+      riichiSticks: this.riichiSticks,
+      preDistributeRiichiSticks,
+      notenPayment,
+      riichiPerTenpai,
+      isRenchan,
+      nextRoundLabel,
     };
     this.roundOver = true;
     this.phase = 'round_end';
   }
 
   // ===== Game State for Yaku =====
+
+  isFuriten(playerIdx) {
+    const p = this.players[playerIdx];
+    const waits = getWaitingTiles(p.hand, p.melds);
+    if (waits.length === 0) return false;
+    return waits.some(w => p.discards.some(d => d.key() === w.key()));
+  }
 
   getGameState(playerIdx, winTile, winType) {
     const p = this.players[playerIdx];
@@ -738,6 +781,8 @@ class Game {
       isTenhou: this.turnCount === 0 && winType === 'tsumo' && p.isHuman && playerIdx === this.dealerIndex,
       isChiihou: this.turnCount === 0 && winType === 'tsumo' && p.isHuman && playerIdx !== this.dealerIndex,
       isRenhou: this.turnCount === 0 && winType === 'ron' && p.isHuman,
+      isHaitei: this.wall.isExhausted() && winType === 'tsumo',
+      isHoutei: this.wall.isExhausted() && winType === 'ron',
       doraIndicators: this.wall.getDoraIndicators(),
     };
   }

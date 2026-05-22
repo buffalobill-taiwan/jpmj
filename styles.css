@@ -408,6 +408,12 @@ html, body {
   font-size: clamp(0.8rem, 1.2vw, 1rem);
   font-weight:bold;
 }
+.player-name.riichi-active::before {
+  content: "●";
+  color: #e74c3c;
+  margin-right: 4px;
+  font-size: 0.85em;
+}
 
 #player-info .player-score {
   font-size: clamp(0.8rem, 1.2vw, 1rem);
@@ -521,6 +527,16 @@ html, body {
   opacity: 0.55;
   font-size: 0.85em;
   margin-right: 0.3em;
+}
+.tenpai-indicator .tenpai-tile.tenpai-no-yaku {
+  opacity: 0.4;
+}
+.tenpai-indicator .tenpai-warning {
+  color: #e74c3c;
+}
+.tenpai-indicator .tenpai-tile.furiten-wait {
+  text-decoration: line-through;
+  opacity: 0.5;
 }
 
 #player-hand .last-draw-slot .tile-char {

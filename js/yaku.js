@@ -123,20 +123,7 @@ function findAllDecompositions(tiles) {
 
 function findDecompositionsWithOpen(tiles, openMelds) {
   if (openMelds.length === 0) return findAllDecompositions(tiles);
-  const openTiles = [];
-  for (const m of openMelds) {
-    for (const t of m.tiles) openTiles.push(t);
-  }
-  const closedOnly = [];
-  const openCounts = getCounts(openTiles);
-  for (const t of tiles) {
-    const k = t.key();
-    if ((openCounts[k] || 0) > 0) {
-      openCounts[k]--;
-    } else {
-      closedOnly.push(t);
-    }
-  }
+  const closedOnly = tiles.slice();
   const neededMelds = 4 - openMelds.length;
   if (neededMelds < 0) return [];
   const counts = getCounts(closedOnly);
@@ -601,8 +588,15 @@ function checkKokushi(handInfo, gameState) {
   return [];
 }
 
-const YAKU_CHECKERS = [
-  checkTenhou, checkChiihou, checkRenhou,
+function checkHaitei(handInfo, gameState) {
+  return (gameState && gameState.isHaitei) ? [{ name:'海底摸月', han:1 }] : [];
+}
+
+function checkHoutei(handInfo, gameState) {
+  return (gameState && gameState.isHoutei) ? [{ name:'河底撈魚', han:1 }] : [];
+}
+
+const STANDALONE_YAKU = [
   checkKokushi, checkChiitoitsu,
   checkRiichi, checkIppatsu, checkMenzenTsumo,
   checkPinfu, checkTanyao, checkIipeikou, checkRyanpeikou,
@@ -614,9 +608,25 @@ const YAKU_CHECKERS = [
   checkHonitsu, checkChinitsu,
 ];
 
+const BONUS_YAKU = [
+  checkTenhou, checkChiihou, checkRenhou,
+  checkHaitei, checkHoutei,
+];
+
+const YAKU_CHECKERS = STANDALONE_YAKU.concat(BONUS_YAKU);
+
 function checkAllYaku(handInfo, gameState) {
   const yaku = [];
   for (const checker of YAKU_CHECKERS) {
+    const result = checker(handInfo, gameState);
+    for (const y of result) yaku.push(y);
+  }
+  return yaku;
+}
+
+function checkStandaloneYaku(handInfo, gameState) {
+  const yaku = [];
+  for (const checker of STANDALONE_YAKU) {
     const result = checker(handInfo, gameState);
     for (const y of result) yaku.push(y);
   }
@@ -791,10 +801,12 @@ function evaluateHand(hand, openMelds, winTile, winType, gameState) {
       isKokushi: false,
     };
     const yaku = checkAllYaku(handInfo, { ...gameState, winType, winTile });
+    const standaloneYaku = checkStandaloneYaku(handInfo, { ...gameState, winType, winTile });
     const fu = 25;
     const doraHan = gameState && gameState.doraIndicators ? countDora(allTiles, gameState.doraIndicators) : 0;
     const totalHan = yaku.reduce((s, y) => s + y.han, 0) + doraHan;
     handInfo.yaku = yaku;
+    handInfo.standaloneYaku = standaloneYaku;
     handInfo.fu = fu;
     handInfo.totalHan = totalHan;
     handInfo.doraHan = doraHan;
@@ -812,10 +824,12 @@ function evaluateHand(hand, openMelds, winTile, winType, gameState) {
       isKokushi: true,
     };
     const yaku = checkAllYaku(handInfo, { ...gameState, winType, winTile });
+    const standaloneYaku = checkStandaloneYaku(handInfo, { ...gameState, winType, winTile });
     const fu = 20;
     const doraHan = 0;
     const totalHan = yaku.reduce((s, y) => s + y.han, 0) + doraHan;
     handInfo.yaku = yaku;
+    handInfo.standaloneYaku = standaloneYaku;
     handInfo.fu = fu;
     handInfo.totalHan = totalHan;
     handInfo.doraHan = doraHan;
@@ -833,24 +847,27 @@ function evaluateHand(hand, openMelds, winTile, winType, gameState) {
       isKokushi: false,
     };
     const yaku = checkAllYaku(handInfo, { ...gameState, winType, winTile });
+    const standaloneYaku = checkStandaloneYaku(handInfo, { ...gameState, winType, winTile });
     const fu = calculateFu(handInfo, { ...gameState, winType, winTile });
     const doraHan = gameState && gameState.doraIndicators ? countDora(allTiles, gameState.doraIndicators) : 0;
     const totalHan = yaku.reduce((s, y) => s + y.han, 0) + doraHan;
     handInfo.yaku = yaku;
+    handInfo.standaloneYaku = standaloneYaku;
     handInfo.fu = fu;
     handInfo.totalHan = totalHan;
     handInfo.doraHan = doraHan;
     candidates.push(handInfo);
   }
 
-  if (candidates.length === 0) return null;
+  const validCandidates = candidates.filter(c => c.standaloneYaku.length > 0);
+  if (validCandidates.length === 0) return null;
 
-  candidates.sort((a, b) => {
+  validCandidates.sort((a, b) => {
     if (a.totalHan !== b.totalHan) return b.totalHan - a.totalHan;
     return b.fu - a.fu;
   });
 
-  const best = candidates[0];
+  const best = validCandidates[0];
   const payments = calculatePayments(best, { ...gameState, winType, winTile });
   const isYakuman = best.yaku.some(y => y.isYakuman);
 

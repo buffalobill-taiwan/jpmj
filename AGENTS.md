@@ -26,11 +26,18 @@ python3 -m http.server 8080     # 唯一需要的指令
 | 向聽數估算 | ai.js | 每花色 DP (`solveSuitDP`) + 字牌獨立處理 |
 | `tileDangerLevel(game, tile, useSuji)` | ai.js | 高手傳 `useSuji=true` |
 | 自動玩捨牌用 `normalDiscard` | ai.js | 非 `expertDiscard` |
-| 暗槓/加槓條件 | game.js:536 | `shantenAfter <= shantenBefore` (AI 會主動進行) |
-| Pon/Chi 條件 | ai.js:473 | `shantenAfter < shantenBefore` |
-| 鳴牌優先權 | game.js:288 | `ron > kan > pon > chi` |
+| 暗槓/加槓條件 | game.js | `shantenAfter <= shantenBefore` (AI 會主動進行) |
+| Pon/Chi 條件 | ai.js | `shantenAfter < shantenBefore` |
+| 鳴牌優先權 | game.js | `ron > kan > pon > chi` |
 | 王牌區 dead wall 起始 index 122，嶺上牌從 index 135 往下取 | wall.js | |
 | 寶牌最多 5 張，每槓 `addDoraIndicator()` | wall.js | |
+| 役種 split：`STANDALONE_YAKU` / `BONUS_YAKU` | yaku.js | 偶然役/ドラ為 bonus，不計入開牌判定 |
+| `findDecompositionsWithOpen` 不減去副露牌 | yaku.js | 手牌已不含副露牌，減去會誤扣第 4 張 |
+| 振聽判斷 | game.js `isFuriten` | 永久振聽（比對捨牌與待牌 key） |
+| 海底牌禁止吃碰槓 | game.js `buildAvailableCalls` | 以 `wall.isExhausted()` 阻擋 |
+| 立直棒跨局保留 | game.js `riichiSticks` | 流局無聽牌時保留至次局；有聽牌時分配 |
+| 流局詳細顯示 | main.js `showRoundResult` | 罰符、立直棒去向、連莊/輪莊、次局名稱 |
+| `roundResult` 擴充欄位 | game.js | `preDistributeRiichiSticks`, `notenPayment`, `riichiPerTenpai`, `isRenchan`, `nextRoundLabel` |
 
 ## State Machine
 
@@ -63,6 +70,11 @@ dealer_first_discard → draw → discard → call_pending → advanceTurn → d
 //           isRiichi, ippantumRound, riichiBet, isTenpai, lastDraw, seatWind }
 // GameState: { isDealer, seatWind, roundWind, winType, winTile, isRiichi, 
 //             isIppatsu, isTenhou, isChiihou, isRenhou, doraIndicators }
+// roundResult (win): { winner, winType, yaku, totalHan, fu, payments, isYakuman,
+//                       winTile, honba, riichiSticks, doraHan, isRenchan, nextRoundLabel }
+// roundResult (exhaustive): { winner:-1, winType:'exhaustive', tenpaiPlayers, notenPlayers,
+//                              honba, riichiSticks, preDistributeRiichiSticks,
+//                              notenPayment, riichiPerTenpai, isRenchan, nextRoundLabel }
 ```
 
 ## CSS
