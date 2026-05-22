@@ -287,29 +287,16 @@ function renderPlayerArea() {
     const indicator = document.createElement('div');
     indicator.className = 'tenpai-indicator';
 
-    const waitYaku = {};
-    for (const w of waits) {
-      const ronGs = game.getGameState(0, w, 'ron');
-      const ronResult = evaluateHand(tenpaiHand, p.melds, w, 'ron', ronGs);
-      if (ronResult && ronResult.yaku.length > 0) { waitYaku[w.key()] = true; continue; }
-      const tsumoGs = game.getGameState(0, w, 'tsumo');
-      const tsumoResult = evaluateHand(tenpaiHand, p.melds, w, 'tsumo', tsumoGs);
-      if (tsumoResult && tsumoResult.yaku.length > 0) { waitYaku[w.key()] = true; continue; }
-      waitYaku[w.key()] = false;
-    }
-    const hasYaku = Object.values(waitYaku).some(v => v);
     const isFuriten = waits.some(w => p.discards.some(d => d.key() === w.key()));
 
     const label = document.createElement('span');
-    const noYaku = !hasYaku;
-    label.className = 'tenpai-label-main' + (noYaku || isFuriten ? ' tenpai-warning' : '');
-    label.textContent = noYaku ? '聽（無役）' : isFuriten ? '聽（振聽）' : '聽';
+    label.className = 'tenpai-label-main' + (isFuriten ? ' tenpai-warning' : '');
+    label.textContent = isFuriten ? '聽（振聽）' : '聽';
     indicator.appendChild(label);
 
     for (const w of waits) {
       const tileSpan = document.createElement('span');
       let cls = 'tenpai-tile';
-      if (!waitYaku[w.key()]) cls += ' tenpai-no-yaku';
       if (p.discards.some(d => d.key() === w.key())) cls += ' furiten-wait';
       tileSpan.className = cls;
       tileSpan.textContent = w.char;
@@ -441,6 +428,18 @@ function renderControls() {
           renderGame();
           showRoundResult();
         });
+        ctrl.appendChild(btn);
+      } else if (action.type === 'ron-no-yaku') {
+        const btn = document.createElement('button');
+        btn.className = 'disabled';
+        btn.textContent = 'ロン(無役)';
+        btn.disabled = true;
+        ctrl.appendChild(btn);
+      } else if (action.type === 'ron-furiten') {
+        const btn = document.createElement('button');
+        btn.className = 'disabled';
+        btn.textContent = 'ロン(振聽)';
+        btn.disabled = true;
         ctrl.appendChild(btn);
       } else if (action.type === 'pon') {
         const btn = document.createElement('button');
@@ -779,9 +778,14 @@ function showRoundResult() {
     const tenpaiStr = r.tenpaiPlayers.length > 0 ? r.tenpaiPlayers.map(i => game.players[i].name).join('、') : '無';
     const notenStr = r.notenPlayers.length > 0 ? r.notenPlayers.map(i => game.players[i].name).join('、') : '無';
 
-    let paymentStr = '';
+    const paymentLines = [];
     if (r.tenpaiPlayers.length > 0 && r.notenPlayers.length > 0) {
-      paymentStr = `<div class="detail">不聽罰符：聽牌者各 +${r.notenPayment}点、不聽者各 -1500点</div>`;
+      for (const ti of r.tenpaiPlayers) {
+        paymentLines.push(`${game.players[ti].name}: +${r.notenPayment}`);
+      }
+      for (const ni of r.notenPlayers) {
+        paymentLines.push(`${game.players[ni].name}: -1500`);
+      }
     }
 
     let riichiStr = '';
@@ -800,7 +804,7 @@ function showRoundResult() {
       <h3>流局</h3>
       <div class="detail">聽牌：${tenpaiStr}</div>
       <div class="detail">不聽：${notenStr}</div>
-      ${paymentStr}
+      ${paymentLines.map(l => `<div class="detail">${l}</div>`).join('')}
       ${riichiStr}
       ${honbaStr}
       <div class="detail">${renchanStr} → ${r.nextRoundLabel}</div>
@@ -822,24 +826,23 @@ function showRoundResult() {
     }
 
     let scoreStr = '';
-    let paymentDetailStr = '';
+    const paymentLines = [];
     if (r.payments.type === 'tsumo') {
       const isDealerWinner = game.players[game.roundResult.winner].seatWind === 1;
       const dealerIdx = game.dealerIndex;
-      const parts = [];
-      parts.push(`${winner.name}: +${r.payments.total}`);
+      paymentLines.push(`${winner.name}: +${r.payments.total}`);
       for (let i = 0; i < 4; i++) {
         if (i === game.roundResult.winner) continue;
         const amt = i === dealerIdx ? r.payments.dealerPayment : r.payments.childPayment;
-        parts.push(`${game.players[i].name}: -${amt}`);
+        paymentLines.push(`${game.players[i].name}: -${amt}`);
       }
       scoreStr = `ツモ ${r.payments.total}点`;
-      paymentDetailStr = parts.join('、');
     } else {
       const discPlayer = game.players[game.lastDiscardPlayer];
       scoreStr = `ロン ${r.payments.discarderPayment}点`;
       if (game.lastDiscardPlayer >= 0) {
-        paymentDetailStr = `${winner.name}: +${r.payments.discarderPayment}、${discPlayer.name}: -${r.payments.discarderPayment}`;
+        paymentLines.push(`${winner.name}: +${r.payments.discarderPayment}`);
+        paymentLines.push(`${discPlayer.name}: -${r.payments.discarderPayment}`);
       }
     }
 
@@ -854,7 +857,7 @@ function showRoundResult() {
       <div class="score-big">${scoreStr}</div>
       <div class="yaku-list">${yakuStr}</div>
       <div class="detail">${detailLine}</div>
-      ${paymentDetailStr ? `<div class="detail">${paymentDetailStr}</div>` : ''}
+      ${paymentLines.map(l => `<div class="detail">${l}</div>`).join('')}
       ${extraDetails.length > 0 ? `<div class="detail">${extraDetails.join(' ')}</div>` : ''}
       <div class="detail">${game.roundLabel}</div>
       <button id="next-round-btn">次局へ</button>

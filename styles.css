@@ -528,9 +528,6 @@ html, body {
   font-size: 0.85em;
   margin-right: 0.3em;
 }
-.tenpai-indicator .tenpai-tile.tenpai-no-yaku {
-  opacity: 0.4;
-}
 .tenpai-indicator .tenpai-warning {
   color: #e74c3c;
 }

@@ -257,6 +257,13 @@ class Game {
       if (ronCheck && !this.isFuriten(pIdx)) {
         calls.push({ type: 'ron', playerIdx: pIdx, tile });
       }
+      if (p.isHuman) {
+        if (this.isFuriten(pIdx)) {
+          calls.push({ type: 'ron-furiten', playerIdx: pIdx, tile });
+        } else if (!ronCheck && canFormCompleteHand(hand, p.melds, tile)) {
+          calls.push({ type: 'ron-no-yaku', playerIdx: pIdx, tile });
+        }
+      }
 
       if (!this.wall.isExhausted()) {
         const handCounts = getCounts(hand);
@@ -289,8 +296,8 @@ class Game {
     }
 
     calls.sort((a, b) => {
-      const pri = { ron:0, kan:1, pon:2, chi:3 };
-      return pri[a.type] - pri[b.type];
+      const pri = { ron:0, 'ron-no-yaku':1, 'ron-furiten':2, kan:3, pon:4, chi:5 };
+      return (pri[a.type] ?? 99) - (pri[b.type] ?? 99);
     });
 
     return calls;

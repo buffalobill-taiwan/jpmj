@@ -596,6 +596,25 @@ function checkHoutei(handInfo, gameState) {
   return (gameState && gameState.isHoutei) ? [{ name:'河底撈魚', han:1 }] : [];
 }
 
+function checkAllMeld(handInfo, gameState) {
+  if (!gameState || gameState.winType !== 'ron') return [];
+  const melds = handInfo.melds;
+  if (melds.length < 4) return [];
+  if (melds.some(m => !m.open)) return [];
+  const hand = handInfo.hand || [];
+  if (hand.length !== 1) return [];
+  return [{ name: '全求人', han: 1 }];
+}
+
+function canFormCompleteHand(hand, openMelds, winTile) {
+  const allTiles = Tile.sortTiles(hand.concat([winTile]));
+  if (openMelds.length === 0) {
+    if (checkChiitoitsuDecomp(allTiles)) return true;
+    if (checkKokushiDecomp(allTiles)) return true;
+  }
+  return findDecompositionsWithOpen(allTiles, openMelds).length > 0;
+}
+
 const STANDALONE_YAKU = [
   checkKokushi, checkChiitoitsu,
   checkRiichi, checkIppatsu, checkMenzenTsumo,
@@ -606,6 +625,7 @@ const STANDALONE_YAKU = [
   checkToitoi, checkSanankou, checkHonroutou,
   checkShousangen, checkSankantsu,
   checkHonitsu, checkChinitsu,
+  checkAllMeld,
 ];
 
 const BONUS_YAKU = [
