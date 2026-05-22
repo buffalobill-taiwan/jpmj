@@ -325,41 +325,56 @@ function renderOpponent(areaId, playerIdx, reveal) {
 
   const handDiv = area.querySelector('.tiles-row');
   handDiv.innerHTML = '';
+  const drawSlot = area.querySelector('.opponent-last-draw');
+  drawSlot.innerHTML = '';
 
-  const drawnTile = p.lastDraw;
-  const drawnIdx = drawnTile ? p.hand.findIndex(t => t.equals(drawnTile)) : -1;
-  const nonDrawn = [];
-  for (let i = 0; i < p.hand.length; i++) {
-    if (i !== drawnIdx) nonDrawn.push(p.hand[i]);
-  }
+  /* always put a tile-char in the slot (hidden when no draw) */
+  const slotTile = document.createElement('span');
+  slotTile.className = 'tile-char';
+  slotTile.textContent = '🀫\uFE0F';
+  drawSlot.appendChild(slotTile);
 
-  const hideCount = (p.isRiichi && !reveal && nonDrawn.length > 0) ? 1 : 0;
-  const shownNonDrawn = hideCount > 0 ? nonDrawn.slice(0, -1) : nonDrawn;
-  const hasDrawn = drawnIdx >= 0 && !(p.isRiichi && !reveal);
-
-  const placeholder = null;
-
-  let displayTiles;
-  if (areaId === 'opponent-top') {
-    displayTiles = hasDrawn ? [drawnTile, ...shownNonDrawn] : [placeholder, ...shownNonDrawn];
-  } else if (areaId === 'opponent-left') {
-    displayTiles = hasDrawn ? [...shownNonDrawn, drawnTile] : [...shownNonDrawn, placeholder];
-  } else if (areaId === 'opponent-right') {
-    displayTiles = hasDrawn ? [drawnTile, ...shownNonDrawn] : [placeholder, ...shownNonDrawn];
+  if (reveal) {
+    /* result screen: show all tiles together in the hand */
+    for (const t of p.hand) {
+      const span = document.createElement('span');
+      span.className = 'tile-char';
+      span.textContent = t.char;
+      handDiv.appendChild(span);
+    }
+    slotTile.classList.add('hidden');
   } else {
-    displayTiles = hasDrawn ? [...shownNonDrawn, drawnTile] : [...shownNonDrawn, placeholder];
-  }
+    /* normal play: separate drawn tile into slot */
+    const drawnTile = p.lastDraw;
+    const drawnIdx = drawnTile ? p.hand.findIndex(t => t.equals(drawnTile)) : -1;
+    const nonDrawn = [];
+    for (let i = 0; i < p.hand.length; i++) {
+      if (i !== drawnIdx) nonDrawn.push(p.hand[i]);
+    }
 
-  for (const t of displayTiles) {
-    const span = document.createElement('span');
-    span.className = 'tile-char';
-    if (t === null) {
+    const hideCount = (p.isRiichi && nonDrawn.length > 0) ? 1 : 0;
+    const shownNonDrawn = hideCount > 0 ? nonDrawn.slice(0, -1) : nonDrawn;
+
+    for (const t of shownNonDrawn) {
+      const span = document.createElement('span');
+      span.className = 'tile-char';
+      span.textContent = '🀫\uFE0F';
+      handDiv.appendChild(span);
+    }
+    if (shownNonDrawn.length === 0) {
+      const span = document.createElement('span');
+      span.className = 'tile-char';
       span.style.visibility = 'hidden';
       span.textContent = '🀫\uFE0F';
-    } else {
-      span.textContent = reveal ? t.char : '🀫\uFE0F';
+      handDiv.appendChild(span);
     }
-    handDiv.appendChild(span);
+
+    /* slot: show tile only when drawn and not riichi */
+    if (drawnIdx >= 0 && !p.isRiichi) {
+      slotTile.classList.remove('hidden');
+    } else {
+      slotTile.classList.add('hidden');
+    }
   }
 
   const meldsDiv = area.querySelector('.opponent-melds');
