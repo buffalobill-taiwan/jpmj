@@ -817,16 +817,12 @@ function showRoundResult() {
 
     const rankLabel = getRankLabel(r.totalHan, r.isYakuman, r.yaku);
     let yakuRows = '';
-    if (rankLabel) {
-      for (const y of r.yaku) yakuRows += `<tr><td colspan="2">${y.name}</td></tr>`;
-    } else {
-      for (const y of r.yaku) {
-        const hanStr = y.isYakuman ? '役滿' : y.han + '飜';
-        yakuRows += `<tr><td>${y.name}</td><td>${hanStr}</td></tr>`;
-      }
+    for (const y of r.yaku) {
+      const hanStr = y.isYakuman ? '役滿' : y.han + '飜';
+      yakuRows += `<tr><td>${y.name}</td><td>${hanStr}</td></tr>`;
     }
     if (r.doraHan > 0) yakuRows += `<tr><td>ドラ</td><td>${r.doraHan}飜</td></tr>`;
-    if (!rankLabel && r.totalHan > 0) yakuRows += `<tr class="yaku-total"><td>合計</td><td>${r.totalHan}飜 ${r.fu}符</td></tr>`;
+    if (r.totalHan > 0) yakuRows += `<tr class="yaku-total"><td>合計</td><td>${rankLabel || (r.totalHan + '飜 ' + r.fu + '符')}</td></tr>`;
     const yakuStr = `<table class="yaku-table">${yakuRows}</table>`;
 
     let scoreStr = '';
@@ -850,8 +846,6 @@ function showRoundResult() {
       }
     }
 
-    const detailLine = rankLabel || (r.totalHan + '飜 ' + r.fu + '符');
-
     const extraDetails = [];
     if (r.honba > 0) extraDetails.push(`本場${r.honba}`);
     if (r.riichiSticks > 0) extraDetails.push(`立直${r.riichiSticks}`);
@@ -860,7 +854,6 @@ function showRoundResult() {
       <h3>${winner.name} ${r.winType === 'tsumo' ? 'ツモ' : 'ロン'}！</h3>
       <div class="score-big">${scoreStr}</div>
       <div class="yaku-list">${yakuStr}</div>
-      <div class="detail">${detailLine}</div>
       ${paymentLines.map(l => `<div class="detail">${l}</div>`).join('')}
       ${extraDetails.length > 0 ? `<div class="detail">${extraDetails.join(' ')}</div>` : ''}
       <div class="detail">${game.roundLabel}</div>
