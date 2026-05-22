@@ -520,7 +520,7 @@ function renderControls() {
         }
 
         for (const m of p.melds) {
-          if (m.type === 'pon' && !m.isKan && m.tiles[0].key() === selectedKey) {
+          if (m.type === 'triplet' && !m.isKan && m.tiles[0].key() === selectedKey) {
             const btn = document.createElement('button');
             btn.className = 'primary';
             btn.textContent = '加槓';

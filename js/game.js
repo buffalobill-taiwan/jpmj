@@ -360,7 +360,7 @@ class Game {
         else { newHand.push(t); }
       }
       p.hand = newHand;
-      p.melds.push({ type:'pon', tiles:[tile, tile, tile], open:true, from: this.lastDiscardPlayer });
+      p.melds.push({ type:'triplet', tiles:[tile, tile, tile], open:true, from: this.lastDiscardPlayer });
       if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;
@@ -400,7 +400,7 @@ class Game {
         }
       }
       p.hand = newHand;
-      p.melds.push({ type:'chi', tiles:chiTileSet, open:true, from: this.lastDiscardPlayer });
+      p.melds.push({ type:'sequence', tiles:chiTileSet, open:true, from: this.lastDiscardPlayer });
       if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;
@@ -521,7 +521,7 @@ class Game {
     }
 
     for (const m of p.melds) {
-      if (m.type === 'pon' && m.tiles[0].key() === tile.key() && !m.isKan) {
+      if (m.type === 'triplet' && m.tiles[0].key() === tile.key() && !m.isKan) {
         const newHand = [];
         let removed = false;
         for (const t of p.hand) {
@@ -570,7 +570,7 @@ class Game {
     }
 
     for (const m of p.melds) {
-      if (m.type === 'pon' && !m.isKan) {
+      if (m.type === 'triplet' && !m.isKan) {
         const ponKey = m.tiles[0].key();
         if ((counts[ponKey] || 0) >= 1) {
           const tile = p.hand.find(t => t.key() === ponKey);
