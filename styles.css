@@ -822,6 +822,71 @@ html, body {
   background: rgba(255,255,255,0.1);
 }
 
+/* Riichi selection modal */
+#riichi-modal {
+  position:fixed; inset:0;
+  display:none;
+  background:rgba(0,0,0,0.6);
+  z-index:200;
+  align-items:center; justify-content:center;
+}
+#riichi-modal-content {
+  background: linear-gradient(135deg, #1a3a1a, #0a2a0a);
+  border: 2px solid var(--gold);
+  border-radius: 12px;
+  padding: 1.5em 2em;
+  text-align: center;
+  min-width: 320px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+#riichi-modal-content h3 {
+  color: var(--gold);
+  margin: 0 0 1em;
+  font-size: clamp(1rem, 1.5vw, 1.2rem);
+}
+#riichi-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  margin-bottom: 1em;
+}
+#riichi-options button {
+  padding: 0.6em 1.2em;
+  font-size: clamp(0.85rem, 1.3vw, 1.1rem);
+  background: var(--tile-back);
+  color: var(--text-dark);
+  border: 1px solid var(--tile-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.5;
+}
+#riichi-options button:hover {
+  background: #e8dcc8;
+  border-color: var(--gold);
+}
+#riichi-options .riichi-discard {
+  font-weight: bold;
+  margin-right: 0.5em;
+}
+#riichi-options .riichi-waits {
+  color: #555;
+  font-size: 0.9em;
+}
+#riichi-cancel {
+  padding: 0.4em 1.5em;
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+  background: transparent;
+  color: var(--text-light);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+#riichi-cancel:hover {
+  background: rgba(255,255,255,0.1);
+}
+
 /* ===== Responsive ===== */
 
 @media (max-width: 768px) {

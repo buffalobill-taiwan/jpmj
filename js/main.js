@@ -499,19 +499,28 @@ function renderControls() {
       btn.disabled = true;
       ctrl.appendChild(btn);
     } else if (p.melds.length === 0 && game.wall.getRemainingCount() >= 4) {
-      const canRiichi = p.hand.some((_, i) => {
-        const testHand = p.hand.filter((__, j) => j !== i);
-        return checkTenpai(testHand, p.melds);
-      });
-      if (canRiichi) {
+      const riichiCandidates = [];
+      const seenKeys = new Set();
+      for (let i = 0; i < p.hand.length; i++) {
+        const k = p.hand[i].key();
+        if (seenKeys.has(k)) continue;
+        const testHand = p.hand.filter((_, j) => j !== i);
+        if (checkTenpai(testHand, p.melds)) {
+          riichiCandidates.push(i);
+          seenKeys.add(k);
+        }
+      }
+      if (riichiCandidates.length > 0) {
         const btn = document.createElement('button');
         btn.className = 'primary';
         btn.textContent = '立直';
         btn.addEventListener('click', () => {
-          if (selectedTile >= 0) {
-            game.humanRiichi(selectedTile);
+          if (riichiCandidates.length === 1) {
+            game.humanRiichi(riichiCandidates[0]);
             selectedTile = -1;
             continueGame();
+          } else {
+            showRiichiModal(riichiCandidates);
           }
         });
         ctrl.appendChild(btn);
@@ -748,6 +757,31 @@ function showChiModal() {
     const passAction = game.availableActions.find(a => a.type === 'pass');
     if (passAction) game.humanCall(passAction);
     continueGame();
+  };
+  modal.style.display = 'flex';
+}
+
+function showRiichiModal(candidates) {
+  const modal = document.getElementById('riichi-modal');
+  const options = document.getElementById('riichi-options');
+  options.innerHTML = '';
+  const p = game.players[0];
+  for (const idx of candidates) {
+    const tile = p.hand[idx];
+    const testHand = p.hand.filter((_, j) => j !== idx);
+    const waits = getWaitingTiles(testHand, p.melds);
+    const waitStr = waits.map(t => t.char + t.name).join('、');
+    const btn = document.createElement('button');
+    btn.innerHTML = `<span class="riichi-discard">${tile.char} ${tile.name}</span> <span class="riichi-waits">聽：${waitStr}</span>`;
+    btn.addEventListener('click', () => {
+      modal.style.display = 'none';
+      game.humanRiichi(idx);
+      continueGame();
+    });
+    options.appendChild(btn);
+  }
+  document.getElementById('riichi-cancel').onclick = () => {
+    modal.style.display = 'none';
   };
   modal.style.display = 'flex';
 }

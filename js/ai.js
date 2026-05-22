@@ -516,7 +516,10 @@ function aiDecideRiichi(game, playerIdx) {
   if (p.isRiichi) return false;
   if (p.melds.length > 0) return false;
   if (game.wall.getRemainingCount() < 4) return false;
-  if (!checkTenpai(p.hand, p.melds)) return false;
+  if (!p.hand.some((_, i) => {
+    const testHand = p.hand.filter((__, j) => j !== i);
+    return checkTenpai(testHand, p.melds);
+  })) return false;
 
   const cfg = AI_DIFFICULTY[p.difficulty];
   if (Math.random() < cfg.riichiRate) return true;
