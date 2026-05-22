@@ -249,9 +249,14 @@ class Game {
     for (let i = 1; i <= 3; i++) {
       const pIdx = (discardPlayerIdx + i) % 4;
       const p = this.players[pIdx];
-      if (p.isRiichi) continue;
-
       const hand = p.hand;
+      if (p.isRiichi) {
+        const ronCheck = evaluateHand(hand, p.melds, tile, 'ron', this.getGameState(pIdx, tile, 'ron'));
+        if (ronCheck && !this.isFuriten(pIdx)) {
+          calls.push({ type: 'ron', playerIdx: pIdx, tile });
+        }
+        continue;
+      }
 
       const ronCheck = evaluateHand(hand, p.melds, tile, 'ron', this.getGameState(pIdx, tile, 'ron'));
       if (ronCheck && !this.isFuriten(pIdx)) {
