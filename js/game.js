@@ -498,6 +498,7 @@ class Game {
     if (this.phase === 'call_pending') {
       p.ippatsuRound = this.turnCount;
     }
+    p.score -= 1000;
     this.riichiSticks++;
     p.riichiBet = 1000;
     this.riichiDeclaredThisTurn = true;
@@ -704,13 +705,11 @@ class Game {
       }
     }
 
-    for (const pl of this.players) {
-      if (pl.riichiBet > 0) {
-        p.score += pl.riichiBet;
-        pl.riichiBet = 0;
-      }
+    if (this.riichiSticks > 0) {
+      p.score += this.riichiSticks * 1000;
+      this.riichiSticks = 0;
     }
-    this.riichiSticks = 0;
+    for (const pl of this.players) pl.riichiBet = 0;
   }
 
   handleExhaustiveDraw() {
@@ -738,18 +737,6 @@ class Game {
       }
     }
 
-    const preDistributeRiichiSticks = this.riichiSticks;
-    let riichiPerTenpai = 0;
-    if (tenpaiPlayers.length > 0) {
-      const totalRiichi = preDistributeRiichiSticks * 1000;
-      if (totalRiichi > 0) {
-        riichiPerTenpai = Math.floor(totalRiichi / tenpaiPlayers.length);
-        for (const ti of tenpaiPlayers) {
-          this.players[ti].score += riichiPerTenpai;
-        }
-      }
-      this.riichiSticks = 0;
-    }
     for (const p of this.players) p.riichiBet = 0;
 
     const dealerTenpai = tenpaiPlayers.includes(this.dealerIndex);
@@ -765,9 +752,7 @@ class Game {
       notenPlayers,
       honba: this.honba,
       riichiSticks: this.riichiSticks,
-      preDistributeRiichiSticks,
       notenPayment,
-      riichiPerTenpai,
       isRenchan,
       nextRoundLabel,
     };

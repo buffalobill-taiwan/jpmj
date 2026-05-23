@@ -840,12 +840,8 @@ function showRoundResult() {
     }
 
     let riichiStr = '';
-    if (r.preDistributeRiichiSticks > 0) {
-      if (r.tenpaiPlayers.length > 0) {
-        riichiStr = `<div class="detail">立直棒 ${r.preDistributeRiichiSticks} 本（聽牌者各 +${r.riichiPerTenpai}点）</div>`;
-      } else {
-        riichiStr = `<div class="detail">立直棒 ${r.preDistributeRiichiSticks} 本（保留至次局）</div>`;
-      }
+    if (r.riichiSticks > 0) {
+      riichiStr = `<div class="detail">立直棒 ${r.riichiSticks} 本（保留至次局）</div>`;
     }
 
     const honbaStr = r.honba > 0 ? `<div class="detail">本場：${r.honba}</div>` : '';
@@ -936,6 +932,12 @@ function showFinalResult() {
 
   const rs = document.getElementById('result-screen');
   rs.style.display = 'flex';
+
+  if (game.riichiSticks > 0) {
+    const sorted = [...game.players].sort((a, b) => b.score - a.score);
+    sorted[0].score += game.riichiSticks * 1000;
+    game.riichiSticks = 0;
+  }
 
   const scores = game.getFinalScores();
   const list = document.getElementById('rank-list');
