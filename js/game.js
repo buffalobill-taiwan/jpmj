@@ -59,7 +59,6 @@ class Game {
         seatWind: 0,
         isRiichi: false,
         riichiTurn: -1,
-        riichiBet: 0,
         isTenpai: false,
         ippatsuRound: -1,
         lastDraw: null,
@@ -81,7 +80,6 @@ class Game {
       p.discards = [];
       p.isRiichi = false;
       p.riichiTurn = -1;
-      p.riichiBet = 0;
       p.isTenpai = false;
       p.ippatsuRound = -1;
       p.lastDraw = null;
@@ -527,7 +525,6 @@ class Game {
     }
     p.score -= 1000;
     this.riichiSticks++;
-    p.riichiBet = 1000;
     this.riichiDeclaredThisTurn = true;
   }
 
@@ -739,7 +736,6 @@ class Game {
       p.score += this.riichiSticks * 1000;
       this.riichiSticks = 0;
     }
-    for (const pl of this.players) pl.riichiBet = 0;
   }
 
   handleExhaustiveDraw() {
@@ -768,7 +764,6 @@ class Game {
     }
 
     for (const p of this.players) {
-        p.riichiBet = 0;
         p.isRiichi = false;
         p.riichiTurn = -1;
     }
