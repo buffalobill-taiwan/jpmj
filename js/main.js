@@ -995,6 +995,12 @@ function renderLog() {
     if (turnSpan) lastRenderedTurn = parseInt(turnSpan.textContent) - 1;
   }
 
+  // If the last rendered turn is not found in the current log, the log was reset.
+  if (lastRenderedTurn !== -1 && !game.log.some(e => e.turn === lastRenderedTurn)) {
+    el.innerHTML = '';
+    lastRenderedTurn = -1;
+  }
+
   // Add only new entries (turn > lastRenderedTurn)
   for (const e of game.log) {
     if (e.turn > lastRenderedTurn) {
