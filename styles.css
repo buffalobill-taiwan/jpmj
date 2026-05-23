@@ -161,7 +161,7 @@ html, body {
 
 /* Tighter tile spacing in hands & discards */
 .opponent-area .tiles-row .tile-char {
-  margin-right: -4px;
+  margin-right: 0px;
 }
 #opponent-left .tiles-row .tile-char,
 #opponent-right .tiles-row .tile-char {
