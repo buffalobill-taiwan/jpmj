@@ -984,30 +984,36 @@ function showFinalResult() {
 
 // ===== Game Log =====
 
-let lastLogCount = 0;
-
 function renderLog() {
   const el = document.getElementById('log-entries');
   if (!el) return;
 
-  // If log was reset (new game), clear the display
-  if (game.log.length < lastLogCount) {
-    el.innerHTML = '';
-    lastLogCount = 0;
+  // Get the last rendered turn number
+  let lastRenderedTurn = -1;
+  if (el.lastChild) {
+    const turnSpan = el.lastChild.querySelector('.log-turn');
+    if (turnSpan) lastRenderedTurn = parseInt(turnSpan.textContent) - 1;
   }
 
-  for (let i = lastLogCount; i < game.log.length; i++) {
-    const e = game.log[i];
-    const div = document.createElement('div');
-    div.className = 'log-entry';
-    div.innerHTML = `<span class="log-turn">${e.turn + 1}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}`;
-    el.appendChild(div);
+  // Add only new entries (turn > lastRenderedTurn)
+  for (const e of game.log) {
+    if (e.turn > lastRenderedTurn) {
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.innerHTML = `<span class="log-turn">${e.turn + 1}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}`;
+      el.appendChild(div);
+      lastRenderedTurn = e.turn;
+    }
   }
 
-  if (game.log.length > lastLogCount) {
+  // Cleanup: Keep DOM in sync (max 100)
+  while (el.children.length > 100) {
+    el.removeChild(el.firstChild);
+  }
+  
+  if (el.scrollHeight > el.clientHeight) {
     el.scrollTop = el.scrollHeight;
   }
-  lastLogCount = game.log.length;
 }
 
 // ===== Bootstrap =====
