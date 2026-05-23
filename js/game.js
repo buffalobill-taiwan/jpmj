@@ -478,6 +478,16 @@ class Game {
     if (this.log.length > 100) this.log.shift();
   }
 
+  addSystemLog(action, detail) {
+    this.log.push({
+      turn: this.turnCount,
+      player: '系統',
+      action,
+      detail: detail || '',
+    });
+    if (this.log.length > 100) this.log.shift();
+  }
+
   advanceTurn() {
     this.addLog(this.currentPlayer, '→', this.players[(this.currentPlayer + 1) % 4].name);
     this.lastDiscard = null;
@@ -694,7 +704,7 @@ class Game {
     };
 
     this.applyScore(playerIdx, result.payments);
-    this.addLog('系統', '局結束', `${this.roundLabel} 由 ${p.name} 和牌`);
+    this.addSystemLog('局結束', `${this.roundLabel} 由 ${p.name} 和牌`);
     this.roundOver = true;
     this.phase = 'round_end';
   }
@@ -851,7 +861,7 @@ class Game {
     if (this.checkGameOver()) {
       this.phase = 'game_end';
       this.gameOver = true;
-      this.addLog('系統', '終局', '遊戲結束');
+      this.addSystemLog('終局', '遊戲結束');
     } else {
       this.startNewRound();
     }
