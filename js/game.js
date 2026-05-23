@@ -685,6 +685,7 @@ class Game {
     };
 
     this.applyScore(playerIdx, result.payments);
+    this.addLog('系統', '局結束', `${this.roundLabel} 由 ${p.name} 和牌`);
     this.roundOver = true;
     this.phase = 'round_end';
   }
@@ -841,6 +842,7 @@ class Game {
     if (this.checkGameOver()) {
       this.phase = 'game_end';
       this.gameOver = true;
+      this.addLog('系統', '終局', '遊戲結束');
     } else {
       this.startNewRound();
     }
