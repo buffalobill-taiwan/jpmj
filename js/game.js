@@ -221,10 +221,11 @@ class Game {
     this.executeDiscard(this.currentPlayer, tileIdx);
   }
 
-  executeDiscard(playerIdx, tileIdx) {
+  executeDiscard(playerIdx, tileIdx, isRiichi = false) {
     const p = this.players[playerIdx];
     const tile = p.hand.splice(tileIdx, 1)[0];
     if (!tile) return;
+    if (isRiichi) tile.isRiichi = true;
     p.hand = Tile.sortTiles(p.hand);
     p.discards.push(tile);
     this.lastDiscard = tile;
@@ -494,7 +495,7 @@ class Game {
 
     p.isRiichi = true;
     this.addLog(this.currentPlayer, '立直', tile.name);
-    this.executeDiscard(this.currentPlayer, tileIdx);
+    this.executeDiscard(this.currentPlayer, tileIdx, true);
     if (this.phase === 'call_pending') {
       p.ippatsuRound = this.turnCount;
     }

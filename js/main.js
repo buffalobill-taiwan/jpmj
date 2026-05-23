@@ -203,6 +203,7 @@ function renderPlayerArea() {
     if (i < playerDiscards.length) {
       const d = playerDiscards[i];
       if (d.called) span.classList.add('called');
+      if (d.isRiichi) span.classList.add('riichi-tile');
       span.textContent = d.char;
     } else {
       span.style.visibility = 'hidden';
@@ -401,6 +402,7 @@ function renderOpponent(areaId, playerIdx, reveal) {
     if (i < discards.length) {
       const d = discards[i];
       if (d.called) span.classList.add('called');
+      if (d.isRiichi) span.classList.add('riichi-tile');
       span.textContent = d.char;
     } else {
       span.style.visibility = 'hidden';
