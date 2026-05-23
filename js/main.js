@@ -109,8 +109,14 @@ function continueGame() {
   if (game.gameOver) { autoPlay = false; showFinalResult(); return; }
   if (game.roundOver) { autoPlay = false; setTimeout(() => showRoundResult(), TICK); return; }
 
-  renderGame();
+  const startTime = performance.now();
+
   const needHuman = game.advance();
+
+  if (needHuman && autoPlay) {
+    processAutoPlay();
+  }
+
   renderGame();
 
   if (game.roundOver) {
@@ -119,16 +125,21 @@ function continueGame() {
     return;
   }
 
-  if (!needHuman) {
-    setTimeout(continueGame, TICK);
-  } else if (autoPlay) {
-    processAutoPlay();
-    renderGame();
-    setTimeout(continueGame, TICK);
+  const executionTime = performance.now() - startTime;
+  const nextDelay = Math.max(0, TICK - executionTime);
+
+  if (!needHuman || autoPlay) {
+    setTimeout(continueGame, nextDelay);
   }
 }
 
 // ===== Game Rendering =====
+
+let lastTenpaiCache = {
+  handStr: '',
+  isTenpai: false,
+  waits: []
+};
 
 function renderGame() {
   if (!game) return;
@@ -140,6 +151,38 @@ function renderGame() {
   renderOpponent('opponent-left', 3);
   renderControls();
   renderLog();
+}
+
+function updateTileChars(container, tiles, count, posFn) {
+  let spans = container.querySelectorAll('.tile-char');
+  if (spans.length === 0) {
+    for (let i = 0; i < count; i++) {
+      const span = document.createElement('span');
+      span.className = 'tile-char';
+      container.appendChild(span);
+    }
+    spans = container.querySelectorAll('.tile-char');
+  }
+
+  for (let i = 0; i < count; i++) {
+    const span = spans[i];
+    if (i < tiles.length) {
+      const d = tiles[i];
+      const char = d.char || '🀫\uFE0F';
+      if (span.textContent !== char) span.textContent = char;
+      span.style.visibility = 'visible';
+      span.style.pointerEvents = 'auto';
+      span.className = 'tile-char';
+      if (d.called) span.classList.add('called');
+      if (d.isRiichi) span.classList.add('riichi-tile');
+      if (posFn) posFn(span, i);
+    } else {
+      span.style.visibility = 'hidden';
+      span.style.pointerEvents = 'none';
+      span.textContent = '🀫\uFE0F';
+      span.className = 'tile-char';
+    }
+  }
 }
 
 function renderCenterInfo() {
@@ -155,20 +198,25 @@ function renderCenterInfo() {
   ci.querySelector('.wall-count').textContent = `殘牌 ${wallCount} 張`;
 
   const doraArea = document.getElementById('dora-area');
-  doraArea.innerHTML = '';
   const indicators = game.wall.getDoraIndicators();
-  for (const ind of indicators) {
-    const span = document.createElement('span');
-    span.className = 'tile-char';
-    span.textContent = ind.char;
-    doraArea.appendChild(span);
+  let spans = doraArea.querySelectorAll('.tile-char');
+  if (spans.length === 0) {
+    for (let i = 0; i < 5; i++) {
+      const span = document.createElement('span');
+      span.className = 'tile-char';
+      doraArea.appendChild(span);
+    }
+    spans = doraArea.querySelectorAll('.tile-char');
   }
-  const maxDoraPositions = 5;
-  for (let i = indicators.length; i < maxDoraPositions; i++) {
-    const span = document.createElement('span');
-    span.className = 'tile-char tile-back';
-    span.textContent = '🀫\uFE0F';
-    doraArea.appendChild(span);
+  for (let i = 0; i < 5; i++) {
+    const span = spans[i];
+    if (i < indicators.length) {
+      span.className = 'tile-char';
+      span.textContent = indicators[i].char;
+    } else {
+      span.className = 'tile-char tile-back';
+      span.textContent = '🀫\uFE0F';
+    }
   }
 }
 
@@ -195,23 +243,7 @@ function renderPlayerArea() {
   }
 
   const discardsDiv = document.getElementById('player-discards');
-  discardsDiv.innerHTML = '';
-  const playerDiscards = p.discards.slice(-24);
-  for (let i = 0; i < 24; i++) {
-    const span = document.createElement('span');
-    span.className = 'tile-char';
-    if (i < playerDiscards.length) {
-      const d = playerDiscards[i];
-      if (d.called) span.classList.add('called');
-      if (d.isRiichi) span.classList.add('riichi-tile');
-      span.textContent = d.char;
-    } else {
-      span.style.visibility = 'hidden';
-      span.style.pointerEvents = 'none';
-      span.textContent = '🀫\uFE0F';
-    }
-    discardsDiv.appendChild(span);
-  }
+  updateTileChars(discardsDiv, p.discards.slice(-24), 24);
 
   const handDiv = document.getElementById('player-hand');
   handDiv.innerHTML = '';
@@ -278,8 +310,17 @@ function renderPlayerArea() {
   const tenpaiHand = drawnInHand >= 0
     ? p.hand.filter((_, i) => i !== drawnInHand)
     : p.hand;
-  const isTenpai = checkTenpai(tenpaiHand, p.melds);
-  const waits = isTenpai ? getWaitingTiles(tenpaiHand, p.melds) : [];
+  
+  const handStr = tenpaiHand.map(t => t.key()).join(',') + '|' + p.melds.length;
+  let isTenpai, waits;
+  if (handStr === lastTenpaiCache.handStr) {
+    isTenpai = lastTenpaiCache.isTenpai;
+    waits = lastTenpaiCache.waits;
+  } else {
+    isTenpai = checkTenpai(tenpaiHand, p.melds);
+    waits = isTenpai ? getWaitingTiles(tenpaiHand, p.melds) : [];
+    lastTenpaiCache = { handStr, isTenpai, waits };
+  }
 
   const handRow = document.getElementById('player-hand-row');
   const oldIndicator = handRow.querySelector('.tenpai-indicator');
@@ -393,22 +434,7 @@ function renderOpponent(areaId, playerIdx, reveal) {
   }
 
   const discDiv = area.querySelector('.opponent-discards');
-  discDiv.innerHTML = '';
-  const discards = p.discards.slice(-24);
-
-  for (let i = 0; i < 24; i++) {
-    const span = document.createElement('span');
-    span.className = 'tile-char';
-    if (i < discards.length) {
-      const d = discards[i];
-      if (d.called) span.classList.add('called');
-      if (d.isRiichi) span.classList.add('riichi-tile');
-      span.textContent = d.char;
-    } else {
-      span.style.visibility = 'hidden';
-      span.style.pointerEvents = 'none';
-      span.textContent = '🀫\uFE0F';
-    }
+  updateTileChars(discDiv, p.discards.slice(-24), 24, (span, i) => {
     if (areaId === 'opponent-right') {
       span.style.gridRow = String(12 - (i % 12));
       span.style.gridColumn = String(Math.floor(i / 12) + 1);
@@ -416,8 +442,7 @@ function renderOpponent(areaId, playerIdx, reveal) {
       span.style.gridRow = String((i % 12) + 1);
       span.style.gridColumn = String(Math.floor(i / 12) === 0 ? 2 : 1);
     }
-    discDiv.appendChild(span);
-  }
+  });
 }
 
 // ===== Controls =====
@@ -959,14 +984,30 @@ function showFinalResult() {
 
 // ===== Game Log =====
 
+let lastLogCount = 0;
+
 function renderLog() {
   const el = document.getElementById('log-entries');
   if (!el) return;
-  const entries = game.log;
-  el.innerHTML = entries.slice(-25).map(e =>
-    `<div class="log-entry"><span class="log-turn">${e.turn + 1}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}</div>`
-  ).join('');
-  el.scrollTop = el.scrollHeight;
+
+  // If log was reset (new game), clear the display
+  if (game.log.length < lastLogCount) {
+    el.innerHTML = '';
+    lastLogCount = 0;
+  }
+
+  for (let i = lastLogCount; i < game.log.length; i++) {
+    const e = game.log[i];
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.innerHTML = `<span class="log-turn">${e.turn + 1}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}`;
+    el.appendChild(div);
+  }
+
+  if (game.log.length > lastLogCount) {
+    el.scrollTop = el.scrollHeight;
+  }
+  lastLogCount = game.log.length;
 }
 
 // ===== Bootstrap =====
