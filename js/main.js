@@ -984,35 +984,58 @@ function showFinalResult() {
 
 // ===== Game Log =====
 
+let lastLogId = null;
+
 function renderLog() {
   const el = document.getElementById('log-entries');
   if (!el) return;
 
-  // Get the last rendered turn number
-  let lastRenderedTurn = -1;
-  if (el.lastChild) {
-    const turnSpan = el.lastChild.querySelector('.log-turn');
-    if (turnSpan) lastRenderedTurn = parseInt(turnSpan.textContent) - 1;
+  // If the log is empty but we have log data, render everything
+  if (game.log.length > 0 && el.children.length === 0) {
+    lastLogId = null;
   }
 
-  // If the last rendered turn is not found in the current log, the log was reset.
-  if (lastRenderedTurn !== -1 && !game.log.some(e => e.turn === lastRenderedTurn)) {
-    el.innerHTML = '';
-    lastRenderedTurn = -1;
-  }
-
-  // Add only new entries (turn > lastRenderedTurn)
+  // Create a unique ID for each log entry to track sync
   for (const e of game.log) {
-    if (e.turn > lastRenderedTurn) {
-      const div = document.createElement('div');
-      div.className = 'log-entry';
-      div.innerHTML = `<span class="log-turn">${e.turn + 1}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}`;
-      el.appendChild(div);
-      lastRenderedTurn = e.turn;
+    const entryId = `${e.turn}-${e.player}-${e.action}-${e.detail}`;
+    if (entryId !== lastLogId) {
+      // Find the last entry ID that exists in the DOM to know where to start appending
+      // For simplicity, if we find a mismatch, just re-syncing from the end.
     }
   }
 
-  // Cleanup: Keep DOM in sync (max 100)
+  // Simplified robust sync: If the first log entry doesn't match the DOM, re-render.
+  // We identify entries by their content.
+  const currentFirstEntryId = game.log.length > 0 ? `${game.log[0].turn}-${game.log[0].player}-${game.log[0].action}` : null;
+  const domFirstEntry = el.firstChild ? el.firstChild.getAttribute('data-id') : null;
+
+  if (game.log.length === 0) {
+    el.innerHTML = '';
+  } else if (domFirstEntry !== currentFirstEntryId) {
+    el.innerHTML = '';
+    for (const e of game.log) {
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.setAttribute('data-id', `${e.turn}-${e.player}-${e.action}`);
+      div.innerHTML = `<span class="log-turn">${e.turn + 1}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}`;
+      el.appendChild(div);
+    }
+  } else {
+    // Append only new entries
+    const existingEntries = Array.from(el.children).map(c => c.getAttribute('data-id'));
+    for (const e of game.log) {
+      const entryId = `${e.turn}-${e.player}-${e.action}`;
+      if (!existingEntries.includes(entryId)) {
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        div.setAttribute('data-id', entryId);
+        div.innerHTML = `<span class="log-turn">${e.turn + 1}.</span> <span class="log-player">${e.player}</span> ${e.action}${e.detail ? ' ' + e.detail : ''}`;
+        el.appendChild(div);
+      }
+    }
+  }
+
+  // Cleanup
   while (el.children.length > 100) {
     el.removeChild(el.firstChild);
   }
