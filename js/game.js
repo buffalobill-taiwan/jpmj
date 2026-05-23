@@ -767,7 +767,11 @@ class Game {
       }
     }
 
-    for (const p of this.players) p.riichiBet = 0;
+    for (const p of this.players) {
+        p.riichiBet = 0;
+        p.isRiichi = false;
+        p.riichiTurn = -1;
+    }
 
     const dealerTenpai = tenpaiPlayers.includes(this.dealerIndex);
     const isRenchan = dealerTenpai;
