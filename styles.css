@@ -201,7 +201,7 @@ html, body {
 }
 
 .opponent-melds .meld-group {
-  display:flex; gap:-8px;
+  display:flex; gap:-24px;
 }
 
 .opponent-discards {
