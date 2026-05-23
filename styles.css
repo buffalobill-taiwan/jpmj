@@ -166,7 +166,7 @@ html, body {
 #opponent-left .tiles-row .tile-char,
 #opponent-right .tiles-row .tile-char {
   margin-right: 0;
-  margin-bottom: -12px;
+  margin-bottom: -24px;
 }
 .opponent-discards .tile-char,
 #player-discards .tile-char {
