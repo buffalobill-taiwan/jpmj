@@ -704,7 +704,7 @@ class Game {
     };
 
     this.applyScore(playerIdx, result.payments);
-    this.addSystemLog('局結束', `${this.roundLabel} 由 ${p.name} 和牌`);
+    this.addSystemLog('本局結束', `${this.roundLabel} 由 ${p.name} 和牌`);
     this.roundOver = true;
     this.phase = 'round_end';
   }
