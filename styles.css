@@ -201,7 +201,12 @@ html, body {
 }
 
 .opponent-melds .meld-group {
-  display:flex; gap:-24px;
+  display:flex;
+}
+
+#opponent-left .opponent-melds .tile-char,
+#opponent-right .opponent-melds .tile-char {
+  margin-bottom: -24px;
 }
 
 .opponent-discards {
