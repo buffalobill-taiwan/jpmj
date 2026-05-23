@@ -19,6 +19,7 @@ class Game {
     this.roundOver = false;
     this.riichiDeclaredThisTurn = false;
     this.lastActionWasRiichi = false;
+    this.lastActionWasKan = false;
     this.discardAfterRiichi = null;
     this.log = [];
   }
@@ -57,6 +58,7 @@ class Game {
         score: 25000,
         seatWind: 0,
         isRiichi: false,
+        riichiTurn: -1,
         riichiBet: 0,
         isTenpai: false,
         ippatsuRound: -1,
@@ -78,6 +80,7 @@ class Game {
       p.melds = [];
       p.discards = [];
       p.isRiichi = false;
+      p.riichiTurn = -1;
       p.riichiBet = 0;
       p.isTenpai = false;
       p.ippatsuRound = -1;
@@ -231,6 +234,7 @@ class Game {
     this.lastDiscard = tile;
     this.lastDiscardPlayer = playerIdx;
     this.riichiDeclaredThisTurn = false;
+    this.lastActionWasKan = false;
 
     this.addLog(playerIdx, '打', tile.name + (p.isRiichi ? '（立直）' : ''));
 
@@ -443,6 +447,7 @@ class Game {
       if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;
+      this.lastActionWasKan = true;
       this.wall.addDoraIndicator();
       this.currentPlayer = playerIdx;
       for (let i = 0; i < 4; i++) {
@@ -468,6 +473,7 @@ class Game {
     this.addLog(this.currentPlayer, '→', this.players[(this.currentPlayer + 1) % 4].name);
     this.lastDiscard = null;
     this.lastDiscardPlayer = -1;
+    this.lastActionWasKan = false;
     this.availableCalls = [];
     this.availableActions = [];
     this.players[this.currentPlayer].lastDraw = null;
@@ -494,6 +500,7 @@ class Game {
     if (!checkTenpai(testHand, p.melds)) return;
 
     p.isRiichi = true;
+    p.riichiTurn = this.turnCount;
     this.addLog(this.currentPlayer, '立直', tile.name);
     this.executeDiscard(this.currentPlayer, tileIdx, true);
     if (this.phase === 'call_pending') {
@@ -524,6 +531,7 @@ class Game {
       }
       p.hand = newHand;
       p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
+      this.lastActionWasKan = true;
       this.wall.addDoraIndicator();
       this.availableActions = [];
       this.phase = 'rinshan';
@@ -599,6 +607,7 @@ class Game {
               m.type = 'kan';
               m.tiles.push(tile);
               m.isKan = true;
+              this.lastActionWasKan = true;
               this.wall.addDoraIndicator();
               this.addLog(playerIdx, '加槓', tile.name);
               this.availableActions = [];
@@ -779,10 +788,13 @@ class Game {
       winType,
       winTile,
       isRiichi: p.isRiichi,
-      isIppatsu: p.ippatsuRound >= 0 && this.turnCount - p.ippatsuRound <= 1,
-      isTenhou: this.turnCount === 0 && winType === 'tsumo' && p.isHuman && playerIdx === this.dealerIndex,
-      isChiihou: this.turnCount === 0 && winType === 'tsumo' && p.isHuman && playerIdx !== this.dealerIndex,
-      isRenhou: this.turnCount === 0 && winType === 'ron' && p.isHuman,
+      isDoubleRiichi: p.isRiichi && p.riichiTurn === 0,
+      isIppatsu: p.ippatsuRound >= 0 && (this.turnCount - p.ippatsuRound <= 1),
+      isTenhou: this.turnCount === 0 && winType === 'tsumo' && playerIdx === this.dealerIndex,
+      isChiihou: this.turnCount === 0 && winType === 'tsumo' && playerIdx !== this.dealerIndex,
+      isRenhou: this.turnCount === 0 && winType === 'ron',
+      isRinshan: this.phase === 'rinshan',
+      isChankan: this.phase === 'call_pending' && this.lastActionWasKan,
       isHaitei: this.wall.isExhausted() && winType === 'tsumo',
       isHoutei: this.wall.isExhausted() && winType === 'ron',
       doraIndicators: this.wall.getDoraIndicators(),

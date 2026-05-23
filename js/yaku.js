@@ -270,6 +270,7 @@ function isMenzen(melds) {
 }
 
 function checkRiichi(handInfo, gameState) {
+  if (gameState && gameState.isDoubleRiichi) return [];
   return (gameState && gameState.isRiichi) ? [{ name:'立直', han:1 }] : [];
 }
 
@@ -463,11 +464,17 @@ function checkToitoi(handInfo, gameState) {
 }
 
 function checkSanankou(handInfo, gameState) {
+  if (handInfo.isKokushi || handInfo.isChiitoitsu) return [];
   let closedTriplets = 0;
   for (const m of handInfo.melds) {
     if ((m.type === 'triplet' || m.type === 'kan') && !m.open) closedTriplets++;
   }
-  if (handInfo.isKokushi || handInfo.isChiitoitsu) return [];
+
+  const waitType = detectWaitTypeSimple(handInfo.hand || [], handInfo.melds, handInfo.pair, gameState ? gameState.winTile : null);
+  if (gameState && gameState.winType === 'ron' && waitType === 'shanpon') {
+    closedTriplets--;
+  }
+
   return closedTriplets >= 3 ? [{ name:'三暗刻', han:2 }] : [];
 }
 
@@ -547,6 +554,99 @@ function checkHonitsu(handInfo, gameState) {
   return [];
 }
 
+function checkDaisangen(handInfo, gameState) {
+  let count = 0;
+  for (const m of handInfo.melds) {
+    if ((m.type === 'triplet' || m.type === 'kan') && m.tiles[0].isSangen) count++;
+  }
+  return count === 3 ? [{ name:'大三元', han:13, isYakuman:true }] : [];
+}
+
+function checkSuuankou(handInfo, gameState) {
+  if (handInfo.isKokushi || handInfo.isChiitoitsu) return [];
+  let closedTriplets = 0;
+  for (const m of handInfo.melds) {
+    if ((m.type === 'triplet' || m.type === 'kan') && !m.open) {
+      closedTriplets++;
+    }
+  }
+
+  const waitType = detectWaitTypeSimple(handInfo.hand || [], handInfo.melds, handInfo.pair, gameState ? gameState.winTile : null);
+
+  // If Ron on a shanpon wait, the triplet completed is not closed.
+  if (gameState && gameState.winType === 'ron' && waitType === 'shanpon') {
+    closedTriplets--;
+  }
+
+  if (closedTriplets === 4) {
+    if (waitType === 'tanki') return [{ name:'四暗刻単騎', han:26, isYakuman:true }];
+    return [{ name:'四暗刻', han:13, isYakuman:true }];
+  }
+  return [];
+}
+
+function checkTsuuiisou(handInfo, gameState) {
+  const allTiles = [...(handInfo.hand || handInfo.tiles), ...handInfo.melds.flatMap(m => m.tiles)];
+  if (allTiles.every(t => t.isHonor)) {
+    return [{ name:'字一色', han:13, isYakuman:true }];
+  }
+  return [];
+}
+
+function checkRyuuiisou(handInfo, gameState) {
+  const allTiles = [...(handInfo.hand || handInfo.tiles), ...handInfo.melds.flatMap(m => m.tiles)];
+  const greenKeys = ['sou2', 'sou3', 'sou4', 'sou6', 'sou8', 'honor6'];
+  if (allTiles.every(t => greenKeys.includes(t.key()))) {
+    return [{ name:'緑一色', han:13, isYakuman:true }];
+  }
+  return [];
+}
+
+function checkChinroutou(handInfo, gameState) {
+  const allTiles = [...(handInfo.hand || handInfo.tiles), ...handInfo.melds.flatMap(m => m.tiles)];
+  if (allTiles.every(t => t.isTerminal && !t.isHonor)) {
+    return [{ name:'清老頭', han:13, isYakuman:true }];
+  }
+  return [];
+}
+
+function checkChuurenPoutou(handInfo, gameState) {
+  if (!isMenzen(handInfo.melds)) return [];
+  const allTiles = Tile.sortTiles([...(handInfo.hand || handInfo.tiles)]);
+  const suit = allTiles[0].suit;
+  if (suit === 'honor') return [];
+  if (!allTiles.every(t => t.suit === suit)) return [];
+  
+  const counts = getCounts(allTiles);
+  if ((counts[suit + 1] || 0) < 3 || (counts[suit + 9] || 0) < 3) return [];
+  for (let v = 2; v <= 8; v++) {
+    if ((counts[suit + v] || 0) < 1) return [];
+  }
+  
+  // Check if it's Junsei (9-way wait)
+  // If the win tile was already in the 1112345678999 structure
+  const winTile = gameState ? gameState.winTile : null;
+  if (winTile) {
+    const handBefore = removeTiles(allTiles, winTile.key(), 1);
+    const cBefore = getCounts(handBefore);
+    if (cBefore[suit+1] === 3 && cBefore[suit+9] === 3) {
+      let junsei = true;
+      for (let v = 2; v <= 8; v++) if (cBefore[suit+v] !== 1) junsei = false;
+      if (junsei) return [{ name:'純正九蓮宝燈', han:26, isYakuman:true }];
+    }
+  }
+
+  return [{ name:'九蓮宝燈', han:13, isYakuman:true }];
+}
+
+function checkSuukantsu(handInfo, gameState) {
+  let kans = 0;
+  for (const m of handInfo.melds) {
+    if (m.type === 'kan') kans++;
+  }
+  return kans === 4 ? [{ name:'四槓子', han:13, isYakuman:true }] : [];
+}
+
 function checkChinitsu(handInfo, gameState) {
   const suits = {};
   const allTiles = [...(handInfo.hand || handInfo.tiles), ...handInfo.melds.flatMap(m => m.tiles)];
@@ -574,9 +674,21 @@ function checkChiihou(handInfo, gameState) {
   return [];
 }
 
+function checkDoubleRiichi(handInfo, gameState) {
+  return (gameState && gameState.isDoubleRiichi) ? [{ name:'ダブル立直', han:2 }] : [];
+}
+
+function checkRinshanKaihou(handInfo, gameState) {
+  return (gameState && gameState.isRinshan) ? [{ name:'嶺上開花', han:1 }] : [];
+}
+
+function checkChankan(handInfo, gameState) {
+  return (gameState && gameState.isChankan) ? [{ name:'槍槓', han:1 }] : [];
+}
+
 function checkRenhou(handInfo, gameState) {
   if (gameState && gameState.isRenhou) {
-    return [{ name:'人和', han:13, isYakuman:true }];
+    return [{ name:'人和', han:4 }];
   }
   return [];
 }
@@ -607,7 +719,8 @@ function canFormCompleteHand(hand, openMelds, winTile) {
 
 const STANDALONE_YAKU = [
   checkKokushi, checkChiitoitsu,
-  checkRiichi, checkIppatsu, checkMenzenTsumo,
+  checkDaisangen, checkSuuankou, checkTsuuiisou, checkRyuuiisou, checkChinroutou, checkChuurenPoutou, checkSuukantsu,
+  checkRiichi, checkDoubleRiichi, checkIppatsu, checkMenzenTsumo,
   checkPinfu, checkTanyao, checkIipeikou, checkRyanpeikou,
   checkYakuhai,
   checkSanshokuDoujun, checkSanshokuDoukou, checkIttsuu,
@@ -619,7 +732,7 @@ const STANDALONE_YAKU = [
 
 const BONUS_YAKU = [
   checkTenhou, checkChiihou, checkRenhou,
-  checkHaitei, checkHoutei,
+  checkHaitei, checkHoutei, checkRinshanKaihou, checkChankan,
 ];
 
 const YAKU_CHECKERS = STANDALONE_YAKU.concat(BONUS_YAKU);
@@ -742,7 +855,7 @@ function calculatePayments(handInfo, gameState) {
 
   let base;
   if (isYakuman) {
-    const yakumanCount = handInfo.yaku.filter(y => y.isYakuman).length;
+    const yakumanCount = handInfo.yaku.filter(y => y.isYakuman).reduce((s, y) => s + Math.floor(y.han / 13), 0);
     base = 8000 * yakumanCount;
   } else {
     base = calculateBaseScore(han, fu);
