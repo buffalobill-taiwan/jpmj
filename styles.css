@@ -172,6 +172,9 @@ html, body {
 #player-discards .tile-char {
   margin-right: -4px;
 }
+#opponent-top .opponent-discards .tile-char {
+  margin-right: 0;
+}
 #opponent-left .opponent-discards .tile-char,
 #opponent-right .opponent-discards .tile-char {
   margin-right: 0;
