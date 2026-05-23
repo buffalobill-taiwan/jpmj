@@ -588,9 +588,9 @@ html, body {
   display: grid;
   grid-template-columns: repeat(12, max-content);
   gap: 0;
-  margin-bottom: 3px;
+  margin-bottom: 12px;
   width: max-content;
-  height: clamp(5rem, 6vw, 6rem);
+  height: clamp(6.5rem, 8vw, 8rem);
   align-content: start;
 }
 
