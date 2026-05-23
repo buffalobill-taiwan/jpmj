@@ -722,14 +722,16 @@ class Game {
     }
 
     if (this.honba > 0) {
+      const totalHonba = this.honba * 300;
       if (payments.type === 'tsumo') {
         for (let i = 0; i < 4; i++) {
           if (i === winnerIdx) continue;
           this.players[i].score -= this.honba * 100;
         }
       } else {
-        this.players[this.lastDiscardPlayer].score -= this.honba * 300;
+        this.players[this.lastDiscardPlayer].score -= totalHonba;
       }
+      p.score += totalHonba;
     }
 
     if (this.riichiSticks > 0) {
