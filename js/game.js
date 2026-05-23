@@ -236,7 +236,16 @@ class Game {
     this.riichiDeclaredThisTurn = false;
     this.lastActionWasKan = false;
 
-    this.addLog(playerIdx, '打', tile.name + (p.isRiichi ? '（立直）' : ''));
+    this.lastActionWasKan = false;
+
+    let detail = tile.name;
+    if (isRiichi) {
+      detail += '（立直）';
+    } else if (p.lastDraw === tile) {
+      detail += '（摸切）';
+    }
+
+    this.addLog(playerIdx, '打', detail);
 
     for (let i = 0; i < 4; i++) {
       if (this.players[i].ippatsuRound >= 0 && i !== playerIdx) {
