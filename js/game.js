@@ -73,6 +73,10 @@ class Game {
   }
 
   startNewRound() {
+    const wind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
+    const label = `${wind}${(this.roundNumber % 4) + 1}局`;
+    this.addSystemLog('開始', label);
+
     this.wall = new Wall();
     for (const p of this.players) {
       p.hand = [];
@@ -146,6 +150,10 @@ class Game {
           this.executeWin(this.currentPlayer, 'tsumo', tile);
           return true;
         }
+      }
+
+      if (!this.players[this.currentPlayer].isHuman && this.handleAIKan(this.currentPlayer)) {
+        return false;
       }
 
       if (p.isRiichi) {
@@ -701,7 +709,7 @@ class Game {
     };
 
     this.applyScore(playerIdx, result.payments);
-    this.addSystemLog('本局結束', `${this.roundLabel} 由 ${p.name} 和牌`);
+    this.addSystemLog('和牌', p.name);
     this.roundOver = true;
     this.phase = 'round_end';
   }
@@ -741,6 +749,7 @@ class Game {
   }
 
   handleExhaustiveDraw() {
+    this.addSystemLog('流局', '');
     this.phase = 'exhaustive_draw';
     const tenpaiPlayers = [];
     const notenPlayers = [];

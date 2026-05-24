@@ -828,7 +828,7 @@ function onTileClick(idx) {
 
 // ===== Round Result =====
 
-function getRankLabel(totalHan, isYakuman, yaku) {
+function getRankLabel(totalHan, fu, isYakuman, yaku) {
   if (isYakuman) {
     const count = yaku.filter(y => y.isYakuman).length;
     if (count >= 2) return count + '倍役満';
@@ -838,7 +838,7 @@ function getRankLabel(totalHan, isYakuman, yaku) {
   if (totalHan >= 11) return '三倍満';
   if (totalHan >= 8) return '倍満';
   if (totalHan >= 6) return '跳満';
-  if (totalHan >= 5) return '満貫';
+  if (totalHan >= 5 || (totalHan === 4 && fu >= 40) || (totalHan === 3 && fu >= 70)) return '満貫';
   return null;
 }
 
@@ -888,7 +888,7 @@ function showRoundResult() {
     const winner = game.players[game.roundResult.winner];
     const r = game.roundResult;
 
-    const rankLabel = getRankLabel(r.totalHan, r.isYakuman, r.yaku);
+    const rankLabel = getRankLabel(r.totalHan, r.fu, r.isYakuman, r.yaku);
     let yakuRows = '';
     for (const y of r.yaku) {
       const hanStr = y.isYakuman ? '役滿' : y.han + '飜';
@@ -930,7 +930,6 @@ function showRoundResult() {
       <div class="yaku-list">${yakuStr}</div>
       ${paymentLines.map(l => `<div class="detail">${l}</div>`).join('')}
       ${extraDetails.length > 0 ? `<div class="detail">${extraDetails.join(' ')}</div>` : ''}
-      <div class="detail">${game.roundLabel}</div>
       <button id="next-round-btn">次局へ</button>
     `;
   }
