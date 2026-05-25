@@ -19,6 +19,7 @@ let setup = {
 
 function init() {
   const savedFont = localStorage.getItem('fontStyle') || 'colorful';
+  VARIANT_SELECTOR = savedFont === 'colorful' ? '\uFE0F' : '\uFE0E';
   document.body.classList.toggle('font-mono', savedFont === 'mono');
   document.querySelectorAll('.font-btn').forEach(b => {
     b.classList.toggle('selected', b.dataset.value === savedFont);
@@ -154,6 +155,7 @@ function bindTitleEvents() {
       document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
       const isMono = btn.dataset.value === 'mono';
+      VARIANT_SELECTOR = isMono ? '\uFE0E' : '\uFE0F';
       document.body.classList.toggle('font-mono', isMono);
       localStorage.setItem('fontStyle', btn.dataset.value);
       renderTitleTiles();
