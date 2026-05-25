@@ -188,14 +188,12 @@ function detectWaitTypeSimple(hand, melds, pair, winTile) {
       if (idx >= 0) {
         const v = m.tiles[0].value;
         if (idx === 0) {
-          if (v === 1) return 'penchan';
-          if (v === 2) return 'penchan';
+          if (v === 7) return 'penchan';
           return 'ryanmen';
         } else if (idx === 1) {
           return 'kanchan';
         } else {
-          if (v === 7) return 'penchan';
-          if (v === 8) return 'penchan';
+          if (v === 1) return 'penchan';
           return 'ryanmen';
         }
       }
