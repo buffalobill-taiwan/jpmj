@@ -317,6 +317,7 @@ function checkTanyao(handInfo, gameState) {
 
 function checkIipeikou(handInfo, gameState) {
   if (!isMenzen(handInfo.melds)) return [];
+  if (checkRyanpeikou(handInfo, gameState).length > 0) return [];
   const seqs = handInfo.melds.filter(m => m.type === 'sequence');
   if (seqs.length < 2) return [];
   for (let i = 0; i < seqs.length; i++) {
@@ -407,6 +408,7 @@ function checkIttsuu(handInfo, gameState) {
 }
 
 function checkChanta(handInfo, gameState) {
+  if (checkJunchan(handInfo, gameState).length > 0) return [];
   for (const m of handInfo.melds) {
     let hasTerminal = false;
     for (const t of m.tiles) {
@@ -709,13 +711,24 @@ const BONUS_YAKU = [
 
 const YAKU_CHECKERS = STANDALONE_YAKU.concat(BONUS_YAKU);
 
+function filterContainedYaku(yaku) {
+  const names = new Set(yaku.map(y => y.name));
+  return yaku.filter(y => {
+    if ((names.has('四暗刻') || names.has('四暗刻単騎')) && (y.name === '対々和' || y.name === '三暗刻')) return false;
+    if (names.has('四槓子') && y.name === '三槓子') return false;
+    if (names.has('清老頭') && y.name === '対々和') return false;
+    if ((names.has('大三元') || names.has('小三元')) && /^(中|發|白) \(役牌\)$/.test(y.name)) return false;
+    return true;
+  });
+}
+
 function checkAllYaku(handInfo, gameState) {
   const yaku = [];
   for (const checker of YAKU_CHECKERS) {
     const result = checker(handInfo, gameState);
     for (const y of result) yaku.push(y);
   }
-  return yaku;
+  return filterContainedYaku(yaku);
 }
 
 function checkStandaloneYaku(handInfo, gameState) {
