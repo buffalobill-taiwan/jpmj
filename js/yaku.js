@@ -667,13 +667,6 @@ function checkChankan(handInfo, gameState) {
   return (gameState && gameState.isChankan) ? [{ name:'槍槓', han:1 }] : [];
 }
 
-function checkRenhou(handInfo, gameState) {
-  if (gameState && gameState.isRenhou) {
-    return [{ name:'人和', han:4 }];
-  }
-  return [];
-}
-
 function checkKokushi(handInfo, gameState) {
   if (handInfo.isKokushi) {
     return [{ name:'国士無双', han:13, isYakuman:true }];
@@ -712,7 +705,7 @@ const STANDALONE_YAKU = [
 ];
 
 const BONUS_YAKU = [
-  checkTenhou, checkChiihou, checkRenhou,
+  checkTenhou, checkChiihou,
   checkHaitei, checkHoutei, checkRinshanKaihou, checkChankan,
 ];
 

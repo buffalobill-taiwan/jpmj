@@ -22,6 +22,9 @@ class Game {
     this.lastActionWasKan = false;
     this.discardAfterRiichi = null;
     this.log = [];
+    this.logGroup = 0;
+    this.lastLogPlayer = -1;
+    this.logEntryId = 0;
   }
 
   get maxRounds() {
@@ -73,6 +76,8 @@ class Game {
   }
 
   startNewRound() {
+    this.logGroup = 0;
+    this.lastLogPlayer = -1;
     const wind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
     const label = `${wind}${(this.roundNumber % 4) + 1}局`;
     this.addSystemLog('開始', label);
@@ -472,24 +477,22 @@ class Game {
   }
 
   addLog(playerIdx, action, detail) {
+    if (playerIdx !== this.lastLogPlayer) this.logGroup++;
+    this.lastLogPlayer = playerIdx;
     const p = this.players[playerIdx];
     this.log.push({
+      id: this.logEntryId++,
       turn: this.turnCount,
-      player: p ? p.name : '?',
+      group: this.logGroup,
+      player: p ? p.name : '系統',
       action,
       detail: detail || '',
     });
-    if (this.log.length > 100) this.log.shift();
+    if (this.log.length > 256) this.log.shift();
   }
 
   addSystemLog(action, detail) {
-    this.log.push({
-      turn: this.turnCount,
-      player: '系統',
-      action,
-      detail: detail || '',
-    });
-    if (this.log.length > 100) this.log.shift();
+    this.addLog(-1, action, detail);
   }
 
   advanceTurn() {
@@ -820,7 +823,6 @@ class Game {
       isIppatsu: p.ippatsuRound >= 0 && (this.turnCount - p.ippatsuRound <= 1),
       isTenhou: this.turnCount === 0 && winType === 'tsumo' && playerIdx === this.dealerIndex,
       isChiihou: this.turnCount === 0 && winType === 'tsumo' && playerIdx !== this.dealerIndex,
-      isRenhou: this.turnCount === 0 && winType === 'ron',
       isRinshan: this.phase === 'rinshan',
       isChankan: this.phase === 'call_pending' && this.lastActionWasKan,
       isHaitei: this.wall.isExhausted() && winType === 'tsumo',
