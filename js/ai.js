@@ -9,7 +9,7 @@ const AI_DIFFICULTY = {
   },
   normal: {
     name: '一般人',
-    callRate: 0.65,
+    callRate: 0.7,
     riichiRate: 0.5,
     defenseLevel: 1,
   },
@@ -310,11 +310,128 @@ function isIsolated(hand, tile) {
   return true;
 }
 
+function aiEvaluateTargets(game, playerIdx) {
+  const p = game.players[playerIdx];
+  const hand = p.hand;
+  const melds = p.melds;
+  const counts = getCounts(hand);
+  const diff = p.difficulty;
+  
+  const targets = {};
+  const isMenzen = melds.length === 0;
+  const shanten = estimateShanten(hand, melds);
+  
+  // Tanyao (斷幺九) - All difficulties
+  let nonTanyaoCount = 0;
+  for (const t of hand) {
+    if (t.isTerminal || t.isHonor) nonTanyaoCount++;
+  }
+  for (const m of melds) {
+    for (const t of m.tiles) {
+      if (t.isTerminal || t.isHonor) { nonTanyaoCount = 999; break; }
+    }
+  }
+  if (nonTanyaoCount < 5) {
+    targets.tanyao = (5 - nonTanyaoCount) * 20;
+  }
+
+  // Yakuhai (役牌) - All difficulties
+  let yakuhaiCount = 0;
+  for (let v = 1; v <= 7; v++) {
+    const key = 'honor' + v;
+    const c = counts[key] || 0;
+    let isYaku = false;
+    if (v >= 5) isYaku = true; // Sangen
+    else if (v === game.roundWind + 1 || v === p.seatWind) isYaku = true;
+    
+    if (isYaku) {
+      if (c >= 2) yakuhaiCount += (c >= 3 ? 100 : 50);
+      for (const m of melds) {
+        if ((m.type === 'triplet' || m.type === 'kan') && m.tiles[0].key() === key) {
+          yakuhaiCount += 100;
+        }
+      }
+    }
+  }
+  if (yakuhaiCount > 0) targets.yakuhai = yakuhaiCount;
+
+  if (diff === 'normal' || diff === 'expert') {
+    // Honitsu (混一色)
+    for (const suit of ['man', 'pin', 'sou']) {
+      let suitCount = 0;
+      let otherSuitCount = 0;
+      for (const t of hand) {
+        if (t.suit === suit || t.isHonor) suitCount++;
+        else otherSuitCount++;
+      }
+      for (const m of melds) {
+        for (const t of m.tiles) {
+          if (t.suit === suit || t.isHonor) suitCount++;
+          else { otherSuitCount = 999; break; }
+        }
+      }
+      if (suitCount >= 8 && otherSuitCount < 4) {
+        targets.honitsu = (suitCount - 7) * 20;
+      }
+    }
+
+    // Toitoi (對對和)
+    const blocks = countBlocks(hand);
+    let triplets = blocks.melds;
+    let pairs = blocks.pairs;
+    for (const m of melds) {
+      if (m.type === 'triplet' || m.type === 'kan') triplets++;
+    }
+    if (triplets + pairs >= 4) {
+      targets.toitoi = (triplets * 30) + (pairs * 10);
+    }
+    
+    // Riichi (立直)
+    if (isMenzen && shanten <= 3) {
+      targets.riichi = (4 - shanten) * 25;
+    }
+  }
+
+  if (diff === 'expert') {
+    // Kokushi (國士無雙)
+    if (isMenzen) {
+      const orphans = new Set();
+      for (const t of hand) {
+        if (t.isTerminal || t.isHonor) orphans.add(t.key());
+      }
+      if (orphans.size >= 8) {
+        targets.kokushi = orphans.size * 20;
+      }
+    }
+
+    // Chiitoitsu (七對子)
+    if (isMenzen) {
+      let pairCount = 0;
+      for (const c of Object.values(counts)) {
+        if (c >= 2) pairCount++;
+      }
+      if (pairCount >= 4) {
+        targets.chiitoitsu = pairCount * 25;
+      }
+    }
+
+    // Survival Mode (存活模式) - Expert only
+    const remaining = game.wall.getRemainingCount();
+    const hasRiichiThreat = game.players.some((pl, idx) => idx !== playerIdx && pl.isRiichi);
+    if (remaining <= 16 && shanten > 0 && hasRiichiThreat) {
+      targets.survival = 1000;
+    }
+  }
+
+  return targets;
+}
+
 // ===== Discard Selection =====
 
 function expertDiscard(game, playerIdx) {
   const p = game.players[playerIdx];
   const hand = p.hand;
+  const targets = aiEvaluateTargets(game, playerIdx);
   const uniq = {};
   for (let i = 0; i < hand.length; i++) {
     const k = hand[i].key();
@@ -333,33 +450,49 @@ function expertDiscard(game, playerIdx) {
 
     let val = 0;
 
-    if (waits.length > 0) {
-      const wq = getWaitQuality(game, testHand, p.melds);
-      val = 100000 - shanten * 10000 + wq.quality * 10 + wq.count * 50;
+    if (targets.survival) {
+      // In survival mode, efficiency and yaku don't matter. Only safety.
+      const danger = tileDangerLevel(game, tile, true);
+      val = -danger * 10000;
+      // If same danger, prefer higher discard priority (e.g. keep middle tiles for later)
+      val += discardPriority(tile) * 100;
     } else {
-      const improve = countImprovingTiles(testHand, p.melds);
-      val = -shanten * 100000 + improve * 8;
+      if (waits.length > 0) {
+        const wq = getWaitQuality(game, testHand, p.melds);
+        val = 100000 - shanten * 10000 + wq.quality * 10 + wq.count * 50;
+      } else {
+        const improve = countImprovingTiles(testHand, p.melds);
+        val = -shanten * 100000 + improve * 8;
+      }
+
+      const resultIsolated = countBlocks(testHand).isolated;
+      val -= resultIsolated * 200;
+
+      // Yaku-aware scoring
+      if (targets.kokushi && (tile.isTerminal || tile.isHonor)) val -= 50000;
+      if (targets.tanyao && (tile.isTerminal || tile.isHonor)) val += 30000;
+      if (targets.honitsu) {
+        const hSuit = Object.keys(getCounts(hand)).find(sk => sk.startsWith('man') || sk.startsWith('pin') || sk.startsWith('sou'))?.slice(0, 3);
+        if (tile.suit !== hSuit && !tile.isHonor) val += 20000;
+      }
+
+      const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
+      if (hasThreat) {
+        const cfg = AI_DIFFICULTY[p.difficulty];
+        const danger = tileDangerLevel(game, tile, cfg.defenseLevel >= 2);
+        val -= danger * cfg.defenseLevel * 15;
+      }
+
+      if (indices.length >= 2 && !targets.kokushi) val += 50; // keep pairs
+
+      if (isIsolated(hand, tile)) {
+        if (tile.isHonor) val += 50000;
+        else if (tile.isTerminal) val += 30000;
+        else val += 10000;
+      }
+
+      val += discardPriority(tile) * 5000;
     }
-
-    const resultIsolated = countBlocks(testHand).isolated;
-    val -= resultIsolated * 200;
-
-    const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
-    if (hasThreat) {
-      const cfg = AI_DIFFICULTY[p.difficulty];
-      const danger = tileDangerLevel(game, tile, cfg.defenseLevel >= 2);
-      val -= danger * cfg.defenseLevel * 15;
-    }
-
-    if (indices.length >= 2) val += 50; // keep pairs
-
-    if (isIsolated(hand, tile)) {
-      if (tile.isHonor) val += 50000;
-      else if (tile.isTerminal) val += 30000;
-      else val += 10000;
-    }
-
-    val += discardPriority(tile) * 5000;
 
     if (val > bestVal) {
       bestVal = val;
@@ -373,6 +506,7 @@ function expertDiscard(game, playerIdx) {
 function normalDiscard(game, playerIdx) {
   const p = game.players[playerIdx];
   const hand = p.hand;
+  const targets = aiEvaluateTargets(game, playerIdx);
   const uniq = {};
   for (let i = 0; i < hand.length; i++) {
     const k = hand[i].key();
@@ -395,6 +529,15 @@ function normalDiscard(game, playerIdx) {
       : 0)
       + (waits.length > 0 ? Math.min(waits.length, 9) * 10 : 0)
       + (indices.length >= 2 ? 50 : 0);
+
+    // Yaku-aware
+    if (targets.tanyao && (tile.isTerminal || tile.isHonor)) val += 500;
+    if (targets.honitsu) {
+      const suitCounts = {man:0, pin:0, sou:0};
+      for(const t of hand) if(t.suit!=='honor') suitCounts[t.suit]++;
+      const bestSuit = Object.entries(suitCounts).sort((a,b)=>b[1]-a[1])[0][0];
+      if (tile.suit !== bestSuit && !tile.isHonor) val += 400;
+    }
 
     const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
     if (hasThreat && AI_DIFFICULTY[p.difficulty].defenseLevel > 0) {
@@ -426,6 +569,7 @@ function beginnerDiscard(game, playerIdx) {
   const p = game.players[playerIdx];
   const hand = p.hand;
   const counts = getCounts(hand);
+  const targets = aiEvaluateTargets(game, playerIdx);
 
   const honors = [];
   const terminals = [];
@@ -436,6 +580,12 @@ function beginnerDiscard(game, playerIdx) {
     if (t.isHonor && counts[t.key()] < 2) honors.push(i);
     else if (t.isTerminal && !t.isHonor) terminals.push(i);
     else others.push(i);
+  }
+
+  // Tanyao aware for beginner
+  if (targets.tanyao) {
+    const pool = [...honors, ...terminals];
+    if (pool.length > 0) return pool[Math.floor(Math.random() * pool.length)];
   }
 
   const pool = [];
@@ -459,14 +609,14 @@ function aiChooseDiscard(game, playerIdx) {
 
 // ===== Call Decision =====
 
-function aiDecideCall(game, availableCalls) {
+function aiDecideCall(game, availableCalls, forceDifficulty = null) {
   if (availableCalls.length === 0) return null;
 
   const ronCall = availableCalls.find(c => c.type === 'ron');
   if (ronCall) return ronCall;
 
   const humanCall = availableCalls.find(c => game.players[c.playerIdx].isHuman);
-  if (humanCall) return null;
+  if (humanCall && !forceDifficulty) return null;
 
   const callsByPlayer = {};
   for (const call of availableCalls) {
@@ -477,37 +627,72 @@ function aiDecideCall(game, availableCalls) {
   let bestCall = null;
   let bestWeight = -1;
 
-  for (const [pIdx, calls] of Object.entries(callsByPlayer)) {
+  for (const [pIdxStr, calls] of Object.entries(callsByPlayer)) {
+    const pIdx = parseInt(pIdxStr);
     const player = game.players[pIdx];
-    const cfg = AI_DIFFICULTY[player.difficulty];
+    const diff = forceDifficulty || player.difficulty;
+    const cfg = AI_DIFFICULTY[diff];
     const shantenBefore = estimateShanten(player.hand, player.melds);
+    const targets = aiEvaluateTargets(game, pIdx);
 
     for (const call of calls) {
-      if (call.type === 'pon' || call.type === 'chi' || call.type === 'kan') {
-        let handAfter;
-        if (call.type === 'pon') {
-          handAfter = removeTiles(player.hand, call.tile.key(), 2);
-        } else if (call.type === 'kan') {
-          handAfter = removeTiles(player.hand, call.tile.key(), 3);
-        } else {
-          handAfter = [...player.hand];
-          for (const ct of call.chiSets[0]) {
-            if (ct.key() === call.tile.key()) continue;
-            handAfter = removeTiles(handAfter, ct.key(), 1);
-          }
-        }
-        const meldsAfter = [...player.melds, { type: call.type }];
-        const shantenAfter = estimateShanten(handAfter, meldsAfter);
-        if (shantenAfter >= shantenBefore) continue;
+      // Strategy Check
+      if (targets.kokushi || targets.chiitoitsu || (targets.riichi && shantenBefore <= 1)) {
+        if (call.type !== 'ron') continue;
       }
 
-      let baseRate = cfg.callRate;
-      if (call.type === 'chi') baseRate *= 0.7;
-      const weight = baseRate * 100;
+      if (call.type === 'pon' || call.type === 'chi' || call.type === 'kan') {
+        const testChiSets = call.type === 'chi' ? call.chiSets : [null];
+        
+        for (let ci = 0; ci < testChiSets.length; ci++) {
+          let handAfter;
+          if (call.type === 'pon') {
+            handAfter = removeTiles(player.hand, call.tile.key(), 2);
+          } else if (call.type === 'kan') {
+            handAfter = removeTiles(player.hand, call.tile.key(), 3);
+          } else {
+            handAfter = [...player.hand];
+            for (const ct of testChiSets[ci]) {
+              if (ct.key() === call.tile.key()) continue;
+              handAfter = removeTiles(handAfter, ct.key(), 1);
+            }
+          }
+          const meldsAfter = [...player.melds, { type: call.type }];
+          const shantenAfter = estimateShanten(handAfter, meldsAfter);
+          
+          if (shantenAfter >= shantenBefore) continue;
 
-      if (weight > bestWeight) {
-        bestWeight = weight;
-        bestCall = call;
+          // Yaku potential check
+          let weightMultiplier = 1.0;
+          const isYakuhai = (call.type === 'pon' || call.type === 'kan') && 
+                           call.tile.isHonor && 
+                           (call.tile.isSangen || call.tile.value === game.roundWind + 1 || call.tile.value === player.seatWind);
+          
+          if (isYakuhai) {
+            weightMultiplier = 1.5;
+          } else if (targets.tanyao) {
+            if (call.tile.isTerminal || call.tile.isHonor) weightMultiplier = 0.1;
+            else weightMultiplier = 1.2;
+          } else if (targets.honitsu) {
+            const suitCounts = {man:0, pin:0, sou:0};
+            for(const t of player.hand) if(t.suit!=='honor') suitCounts[t.suit]++;
+            const bestSuit = Object.entries(suitCounts).sort((a,b)=>b[1]-a[1])[0][0];
+            if (call.tile.suit === bestSuit || call.tile.isHonor) weightMultiplier = 1.3;
+            else weightMultiplier = 0.1;
+          } else {
+            if (game.wall.getRemainingCount() > 40) weightMultiplier = 0.5;
+            else weightMultiplier = 0.8;
+          }
+
+          let baseRate = cfg.callRate;
+          if (call.type === 'chi') baseRate *= 0.7;
+          const weight = baseRate * weightMultiplier * 100;
+
+          if (weight > bestWeight) {
+            bestWeight = weight;
+            bestCall = call.type === 'chi' ? { ...call, chosenChiSet: ci } : call;
+          }
+        }
       }
     }
   }
@@ -547,12 +732,25 @@ function aiDecideKan(game, playerIdx) {
 
   const counts = getCounts(p.hand);
   const shantenBefore = estimateShanten(p.hand, p.melds);
+  const targets = aiEvaluateTargets(game, playerIdx);
+
+  // Strategy Check
+  if (targets.kokushi || targets.chiitoitsu || targets.riichi) return false;
+
   for (const [k, c] of Object.entries(counts)) {
     if (c === 4) {
       const handAfter = removeTiles(p.hand, k, 4);
       const meldsAfter = [...p.melds, { type: 'kan' }];
       const shantenAfter = estimateShanten(handAfter, meldsAfter);
-      if (shantenAfter <= shantenBefore) return true;
+      
+      if (shantenAfter <= shantenBefore) {
+        // Tanyao awareness
+        if (targets.tanyao) {
+          const tile = Tile.fromString(k[0] + k.slice(1));
+          if (tile.isTerminal || tile.isHonor) continue;
+        }
+        return true;
+      }
     }
   }
   return false;

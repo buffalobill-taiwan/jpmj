@@ -25,6 +25,9 @@ python3 -m http.server 8080     # 唯一需要的指令
 | `tile.key()` → `"man5"` | tiles.js | 統一格式 |
 | `VARIANT_SELECTOR`（`'\uFE0E'` 或 `'\uFE0F'`） | tiles.js 宣告，main.js 使用 | 全域變數，`tile.char` 與所有牌背共用 |
 | 向聽數估算 | ai.js | 每花色 DP (`solveSuitDP`) + 字牌獨立處理 |
+| **役種意識 (Target Yaku)** | ai.js | `aiEvaluateTargets` 根據難度與手牌設定目標 (如 Tanyao, Honitsu, Kokushi)。高手在末盤有 **存活模式 (Survival)**。 |
+| **捨牌/鳴牌邏輯** | ai.js | 參考 `targets` 進行 yaku-aware 評分。存活模式下高手會完全放棄進攻，只打安全牌。 |
+| **託管模式** | main.js | 強制使用 `Normal` 強度邏輯 |
 | `tileDangerLevel(game, tile, useSuji)` | ai.js | 高手傳 `useSuji=true` |
 | 自動玩捨牌用 `normalDiscard` | ai.js | 非 `expertDiscard` |
 | 暗槓/加槓條件 | game.js | `shantenAfter <= shantenBefore` (AI 會主動進行) |

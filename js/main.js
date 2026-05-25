@@ -774,87 +774,33 @@ function processAutoPlay() {
 
   // B. Call pending
   if (game.phase === 'call_pending') {
-    const humanCalls = game.availableActions.filter(a => a.type && a.type !== 'pass');
-    const ronCall = humanCalls.find(a => a.type === 'ron');
-    if (ronCall) {
-      game.humanCall(ronCall);
+    const humanCalls = game.availableCalls.filter(c => c.playerIdx === 0);
+    if (humanCalls.length === 0) {
+      const passAction = game.availableActions.find(a => a.type === 'pass');
+      if (passAction) game.humanCall(passAction);
       return;
     }
 
-    const p = game.players[0];
-    const shantenBefore = estimateShanten(p.hand, p.melds);
-
-    const kanCall = humanCalls.find(a => a.type === 'kan');
-    if (kanCall) {
-      const handAfter = removeTiles(p.hand, kanCall.tile.key(), 3);
-      const shantenAfter = estimateShanten(handAfter, [...p.melds, {type:'kan'}]);
-      if (shantenAfter < shantenBefore) {
-        game.humanCall(kanCall);
-        return;
-      }
-    }
-
-    const nonRonCalls = humanCalls.filter(a => a.type === 'pon' || a.type === 'chi');
-    let chosenCall = null;
-    for (const call of nonRonCalls) {
-      if (call.type === 'pon') {
-        const handAfter = removeTiles(p.hand, call.tile.key(), 2);
-        const shantenAfter = estimateShanten(handAfter, [...p.melds, {type:'pon'}]);
-        if (shantenAfter < shantenBefore) {
-          chosenCall = call;
-          break;
-        }
-      } else if (call.type === 'chi') {
-        for (let ci = 0; ci < call.chiSets.length; ci++) {
-          const chiSet = call.chiSets[ci];
-          let handAfter = [...p.hand];
-          for (const ct of chiSet) {
-            if (ct.key() === call.tile.key()) continue;
-            handAfter = removeTiles(handAfter, ct.key(), 1);
-          }
-          const shantenAfter = estimateShanten(handAfter, [...p.melds, {type:'chi'}]);
-          if (shantenAfter < shantenBefore) {
-            chosenCall = { ...call, chosenChiSet: ci };
-            break;
-          }
-        }
-        if (chosenCall) break;
-      }
-    }
+    const chosenCall = aiDecideCall(game, humanCalls, 'normal');
     if (chosenCall) {
       game.humanCall(chosenCall);
-      return;
-    }
-
-    const passAction = game.availableActions.find(a => a.type === 'pass');
-    if (passAction) {
-      game.humanCall(passAction);
-      return;
+    } else {
+      const passAction = game.availableActions.find(a => a.type === 'pass');
+      if (passAction) game.humanCall(passAction);
     }
     return;
   }
 
   // C. Tsumo / pass
   if (game.availableActions) {
-    for (const action of game.availableActions) {
-      if (action === 'tsumo') {
-        if (aiDecideTsumo(game, 0)) {
-          const p = game.players[0];
-          const tile = p.lastDraw;
-          game.executeWin(0, 'tsumo', tile);
-        } else {
-          game.availableActions = [];
-          game.phase = 'discard';
-        }
-        return;
-      }
+    if (game.availableActions.includes('tsumo')) {
+      game.executeWin(0, 'tsumo', game.players[0].lastDraw);
+      return;
     }
-    for (const action of game.availableActions) {
-      if (action === 'pass') {
-        game.availableActions = [];
-        game.phase = 'discard';
-        return;
-      }
+    if (game.availableActions.includes('pass')) {
+      game.availableActions = [];
+      game.phase = 'discard';
+      return;
     }
   }
 }
