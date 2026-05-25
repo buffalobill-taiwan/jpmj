@@ -18,11 +18,10 @@ let setup = {
 // ===== Initialization =====
 
 function init() {
-  const saved = localStorage.getItem('variantSelector');
-  if (saved === 'FE0E') VARIANT_SELECTOR = '\uFE0E';
-  else if (saved === 'FE0F') VARIANT_SELECTOR = '\uFE0F';
-  document.querySelectorAll('.variant-btn').forEach(b => {
-    b.classList.toggle('selected', b.dataset.value === (saved || 'FE0E'));
+  const savedFont = localStorage.getItem('fontStyle') || 'colorful';
+  document.body.classList.toggle('font-mono', savedFont === 'mono');
+  document.querySelectorAll('.font-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.value === savedFont);
   });
 
   const savedLength = localStorage.getItem('setupLength');
@@ -150,12 +149,13 @@ function bindTitleEvents() {
     });
   });
 
-  document.querySelectorAll('.variant-btn').forEach(btn => {
+  document.querySelectorAll('.font-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+      document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      VARIANT_SELECTOR = btn.dataset.value === 'FE0F' ? '\uFE0F' : '\uFE0E';
-      localStorage.setItem('variantSelector', btn.dataset.value);
+      const isMono = btn.dataset.value === 'mono';
+      document.body.classList.toggle('font-mono', isMono);
+      localStorage.setItem('fontStyle', btn.dataset.value);
       renderTitleTiles();
     });
   });
