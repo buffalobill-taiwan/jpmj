@@ -23,6 +23,7 @@ python3 -m http.server 8080     # 唯一需要的指令
 |------|------|------|
 | `Tile.fromString("m1")` | tiles.js | `"m1"` → man-1, `"1z"` → honor-1 |
 | `tile.key()` → `"man5"` | tiles.js | 統一格式 |
+| `VARIANT_SELECTOR`（`'\uFE0E'` 或 `'\uFE0F'`） | tiles.js 宣告，main.js 使用 | 全域變數，`tile.char` 與所有牌背共用 |
 | 向聽數估算 | ai.js | 每花色 DP (`solveSuitDP`) + 字牌獨立處理 |
 | `tileDangerLevel(game, tile, useSuji)` | ai.js | 高手傳 `useSuji=true` |
 | 自動玩捨牌用 `normalDiscard` | ai.js | 非 `expertDiscard` |

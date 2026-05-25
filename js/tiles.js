@@ -1,3 +1,5 @@
+let VARIANT_SELECTOR = '\uFE0E';
+
 const SUIT_ORDER = { man:0, pin:1, sou:2, honor:3 };
 
 const CODE_POINT = {
@@ -26,7 +28,7 @@ class Tile {
   }
 
   get char() {
-    return String.fromCodePoint(this.codePoint) + '\uFE0E';
+    return String.fromCodePoint(this.codePoint) + VARIANT_SELECTOR;
   }
 
   get name() {

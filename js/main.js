@@ -7,6 +7,9 @@ let currentScreen = SCREEN.TITLE;
 let game = null;
 let selectedTile = -1;
 let autoPlay = false;
+
+const TITLE_TILE_CODEPOINTS = [0x1F000,0x1F001,0x1F002,0x1F003,0x1F004,0x1F005,0x1F006,0x1F007,0x1F00E,0x1F019];
+
 let setup = {
   length: 'east',
   difficulties: ['normal','normal','normal'],
@@ -15,10 +18,23 @@ let setup = {
 // ===== Initialization =====
 
 function init() {
+  const saved = localStorage.getItem('variantSelector');
+  if (saved === 'FE0E') VARIANT_SELECTOR = '\uFE0E';
+  else if (saved === 'FE0F') VARIANT_SELECTOR = '\uFE0F';
+  document.querySelectorAll('.variant-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.value === (saved || 'FE0E'));
+  });
+  renderTitleTiles();
   renderTitleScreen();
   bindTitleEvents();
   setupLogDrag();
   setupAutoBtn();
+  setupControls();
+}
+
+function renderTitleTiles() {
+  const el = document.querySelector('.title-tiles');
+  el.textContent = TITLE_TILE_CODEPOINTS.map(cp => String.fromCodePoint(cp) + VARIANT_SELECTOR).join('');
 }
 
 function setupAutoBtn() {
@@ -107,6 +123,16 @@ function bindTitleEvents() {
     });
   });
 
+  document.querySelectorAll('.variant-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.variant-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      VARIANT_SELECTOR = btn.dataset.value === 'FE0F' ? '\uFE0F' : '\uFE0E';
+      localStorage.setItem('variantSelector', btn.dataset.value);
+      renderTitleTiles();
+    });
+  });
+
   document.getElementById('start-btn').addEventListener('click', startGame);
 }
 
@@ -191,7 +217,7 @@ function updateTileChars(container, tiles, count, posFn) {
     const span = spans[i];
     if (i < tiles.length) {
       const d = tiles[i];
-      const char = d.char || '🀫\uFE0F';
+      const char = d.char || '🀫' + VARIANT_SELECTOR;
       if (span.textContent !== char) span.textContent = char;
       span.style.visibility = 'visible';
       span.style.pointerEvents = 'auto';
@@ -202,7 +228,7 @@ function updateTileChars(container, tiles, count, posFn) {
     } else {
       span.style.visibility = 'hidden';
       span.style.pointerEvents = 'none';
-      span.textContent = '🀫\uFE0F';
+      span.textContent = '🀫' + VARIANT_SELECTOR;
       span.className = 'tile-char';
     }
   }
@@ -238,7 +264,7 @@ function renderCenterInfo() {
       span.textContent = indicators[i].char;
     } else {
       span.className = 'tile-char tile-back';
-      span.textContent = '🀫\uFE0F';
+      span.textContent = '🀫' + VARIANT_SELECTOR;
     }
   }
 }
@@ -251,89 +277,92 @@ function renderPlayerArea() {
   pNameEl.classList.toggle('riichi-active', p.isRiichi);
   document.querySelector('#player-info .player-score').textContent = `${p.score}点`;
 
+  const sig = p.hand.map(t => t.key()).join(',') + '|' +
+              p.melds.map(m => m.tiles.map(t => t.key()).join('.')).join(',') + '|' +
+              selectedTile;
+
   const meldsDiv = document.getElementById('player-melds');
-  meldsDiv.innerHTML = '';
-  for (const m of p.melds) {
-    const group = document.createElement('span');
-    group.className = 'meld-group';
-    for (const t of m.tiles) {
+  const handDiv = document.getElementById('player-hand');
+
+  if (meldsDiv._sig !== sig) {
+    meldsDiv._sig = sig;
+
+    meldsDiv.innerHTML = '';
+    for (const m of p.melds) {
+      const group = document.createElement('span');
+      group.className = 'meld-group';
+      for (const t of m.tiles) {
+        const span = document.createElement('span');
+        span.className = 'tile-char';
+        span.textContent = t.char;
+        group.appendChild(span);
+      }
+      meldsDiv.appendChild(group);
+    }
+
+    handDiv.innerHTML = '';
+    const drawnTile = p.lastDraw;
+    const drawnInHand = drawnTile ? p.hand.findIndex(t => t === drawnTile) : -1;
+
+    for (let i = 0; i < p.hand.length; i++) {
+      if (i === drawnInHand) continue;
+      const t = p.hand[i];
+      const slot = document.createElement('div');
+      slot.className = 'tile-slot';
+      if (i === selectedTile) slot.classList.add('selected');
       const span = document.createElement('span');
       span.className = 'tile-char';
       span.textContent = t.char;
-      group.appendChild(span);
+      slot.appendChild(span);
+      const label = document.createElement('div');
+      label.className = 'tile-label';
+      label.textContent = t.name;
+      slot.appendChild(label);
+      slot.addEventListener('click', () => onTileClick(i));
+      handDiv.appendChild(slot);
     }
-    meldsDiv.appendChild(group);
+
+    const gap = document.createElement('div');
+    gap.className = 'tile-gap';
+    handDiv.appendChild(gap);
+
+    if (drawnInHand >= 0) {
+      const t = p.hand[drawnInHand];
+      const slot = document.createElement('div');
+      slot.className = 'tile-slot last-draw-slot';
+      if (drawnInHand === selectedTile) slot.classList.add('selected');
+      const span = document.createElement('span');
+      span.className = 'tile-char';
+      span.textContent = t.char;
+      slot.appendChild(span);
+      const label = document.createElement('div');
+      label.className = 'tile-label';
+      label.textContent = t.name;
+      slot.appendChild(label);
+      slot.addEventListener('click', () => onTileClick(drawnInHand));
+      handDiv.appendChild(slot);
+    } else {
+      const slot = document.createElement('div');
+      slot.className = 'tile-slot';
+      slot.style.visibility = 'hidden';
+      slot.style.pointerEvents = 'none';
+      const span = document.createElement('span');
+      span.className = 'tile-char';
+      span.textContent = '🀫' + VARIANT_SELECTOR;
+      slot.appendChild(span);
+      handDiv.appendChild(slot);
+    }
   }
 
   const discardsDiv = document.getElementById('player-discards');
   updateTileChars(discardsDiv, p.discards.slice(-24), 24);
 
-  const handDiv = document.getElementById('player-hand');
-  handDiv.innerHTML = '';
-
   const drawnTile = p.lastDraw;
   const drawnInHand = drawnTile ? p.hand.findIndex(t => t === drawnTile) : -1;
-
-  for (let i = 0; i < p.hand.length; i++) {
-    if (i === drawnInHand) continue;
-    const t = p.hand[i];
-
-    const slot = document.createElement('div');
-    slot.className = 'tile-slot';
-    if (i === selectedTile) slot.classList.add('selected');
-
-    const span = document.createElement('span');
-    span.className = 'tile-char';
-    span.textContent = t.char;
-    slot.appendChild(span);
-
-    const label = document.createElement('div');
-    label.className = 'tile-label';
-    label.textContent = t.name;
-    slot.appendChild(label);
-
-    slot.addEventListener('click', () => onTileClick(i));
-    handDiv.appendChild(slot);
-  }
-
-  const gap = document.createElement('div');
-  gap.className = 'tile-gap';
-  handDiv.appendChild(gap);
-
-  if (drawnInHand >= 0) {
-    const t = p.hand[drawnInHand];
-    const slot = document.createElement('div');
-    slot.className = 'tile-slot last-draw-slot';
-    if (drawnInHand === selectedTile) slot.classList.add('selected');
-
-    const span = document.createElement('span');
-    span.className = 'tile-char';
-    span.textContent = t.char;
-    slot.appendChild(span);
-
-    const label = document.createElement('div');
-    label.className = 'tile-label';
-    label.textContent = t.name;
-    slot.appendChild(label);
-
-    slot.addEventListener('click', () => onTileClick(drawnInHand));
-    handDiv.appendChild(slot);
-  } else {
-    const slot = document.createElement('div');
-    slot.className = 'tile-slot';
-    slot.style.visibility = 'hidden';
-    slot.style.pointerEvents = 'none';
-    const span = document.createElement('span');
-    span.className = 'tile-char';
-    span.textContent = '🀫\uFE0F';
-    slot.appendChild(span);
-    handDiv.appendChild(slot);
-  }
-
   const tenpaiHand = drawnInHand >= 0
     ? p.hand.filter((_, i) => i !== drawnInHand)
     : p.hand;
-  
+
   const handStr = tenpaiHand.map(t => t.key()).join(',') + '|' + p.melds.length;
   let isTenpai, waits;
   if (handStr === lastTenpaiCache.handStr) {
@@ -346,35 +375,36 @@ function renderPlayerArea() {
   }
 
   const handRow = document.getElementById('player-hand-row');
-  const oldIndicator = handRow.querySelector('.tenpai-indicator');
-  if (oldIndicator) oldIndicator.remove();
+  const tenpaiSig = handStr + '|' + p.discards.length;
+  if (handRow._tenpaiSig === tenpaiSig && handRow.querySelector('.tenpai-indicator')) {
+    // skip — tenpai indicator unchanged
+  } else {
+    handRow._tenpaiSig = tenpaiSig;
+    const oldIndicator = handRow.querySelector('.tenpai-indicator');
+    if (oldIndicator) oldIndicator.remove();
 
-  if (isTenpai && waits.length > 0) {
-    const indicator = document.createElement('div');
-    indicator.className = 'tenpai-indicator';
-
-    const isFuriten = waits.some(w => p.discards.some(d => d.key() === w.key()));
-
-    const label = document.createElement('span');
-    label.className = 'tenpai-label-main' + (isFuriten ? ' tenpai-warning' : '');
-    label.textContent = isFuriten ? '聽（振聽）' : '聽';
-    indicator.appendChild(label);
-
-    for (const w of waits) {
-      const tileSpan = document.createElement('span');
-      let cls = 'tenpai-tile';
-      if (p.discards.some(d => d.key() === w.key())) cls += ' furiten-wait';
-      tileSpan.className = cls;
-      tileSpan.textContent = w.char;
-      indicator.appendChild(tileSpan);
-
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'tenpai-tile-name';
-      nameSpan.textContent = w.name;
-      indicator.appendChild(nameSpan);
+    if (isTenpai && waits.length > 0) {
+      const indicator = document.createElement('div');
+      indicator.className = 'tenpai-indicator';
+      const isFuriten = waits.some(w => p.discards.some(d => d.key() === w.key()));
+      const label = document.createElement('span');
+      label.className = 'tenpai-label-main' + (isFuriten ? ' tenpai-warning' : '');
+      label.textContent = isFuriten ? '聽（振聽）' : '聽';
+      indicator.appendChild(label);
+      for (const w of waits) {
+        const tileSpan = document.createElement('span');
+        let cls = 'tenpai-tile';
+        if (p.discards.some(d => d.key() === w.key())) cls += ' furiten-wait';
+        tileSpan.className = cls;
+        tileSpan.textContent = w.char;
+        indicator.appendChild(tileSpan);
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'tenpai-tile-name';
+        nameSpan.textContent = w.name;
+        indicator.appendChild(nameSpan);
+      }
+      handRow.appendChild(indicator);
     }
-
-    handRow.appendChild(indicator);
   }
 }
 
@@ -388,72 +418,75 @@ function renderOpponent(areaId, playerIdx, reveal) {
   oNameEl.classList.toggle('riichi-active', p.isRiichi);
   area.querySelector('.player-score').textContent = `${p.score}点`;
 
+  const sig = p.hand.length + '|' + (p.lastDraw ? 1 : 0) + '|' +
+              p.isRiichi + '|' + p.melds.length + '|' + reveal;
+
   const handDiv = area.querySelector('.tiles-row');
-  handDiv.innerHTML = '';
   const drawSlot = area.querySelector('.opponent-last-draw');
-  drawSlot.innerHTML = '';
+  const meldsDiv = area.querySelector('.opponent-melds');
 
-  /* always put a tile-char in the slot (hidden when no draw) */
-  const slotTile = document.createElement('span');
-  slotTile.className = 'tile-char';
-  slotTile.textContent = '🀫\uFE0F';
-  drawSlot.appendChild(slotTile);
+  if (area._oppSig !== sig) {
+    area._oppSig = sig;
 
-  if (reveal) {
-    /* result screen: show all tiles together in the hand */
-    for (const t of p.hand) {
-      const span = document.createElement('span');
-      span.className = 'tile-char';
-      span.textContent = t.char;
-      handDiv.appendChild(span);
-    }
-    slotTile.classList.add('hidden');
-  } else {
-    /* normal play: separate drawn tile into slot */
+    handDiv.innerHTML = '';
+    drawSlot.innerHTML = '';
+
+    const slotTile = document.createElement('span');
+    slotTile.className = 'tile-char';
+    slotTile.textContent = '🀫' + VARIANT_SELECTOR;
+    drawSlot.appendChild(slotTile);
+
     const drawnTile = p.lastDraw;
     const drawnIdx = drawnTile ? p.hand.findIndex(t => t === drawnTile) : -1;
-    const nonDrawn = [];
-    for (let i = 0; i < p.hand.length; i++) {
-      if (i !== drawnIdx) nonDrawn.push(p.hand[i]);
+
+    if (reveal) {
+      for (const t of p.hand) {
+        const span = document.createElement('span');
+        span.className = 'tile-char';
+        span.textContent = t.char;
+        handDiv.appendChild(span);
+      }
+      slotTile.classList.add('hidden');
+    } else {
+      const nonDrawn = [];
+      for (let i = 0; i < p.hand.length; i++) {
+        if (i !== drawnIdx) nonDrawn.push(p.hand[i]);
+      }
+      const hideCount = (p.isRiichi && nonDrawn.length > 0) ? 1 : 0;
+      const shownNonDrawn = hideCount > 0 ? nonDrawn.slice(0, -1) : nonDrawn;
+      for (const t of shownNonDrawn) {
+        const span = document.createElement('span');
+        span.className = 'tile-char';
+        span.textContent = '🀫' + VARIANT_SELECTOR;
+        handDiv.appendChild(span);
+      }
+      if (shownNonDrawn.length === 0) {
+        const span = document.createElement('span');
+        span.className = 'tile-char';
+        span.style.visibility = 'hidden';
+        span.textContent = '🀫' + VARIANT_SELECTOR;
+        handDiv.appendChild(span);
+      }
     }
 
-    const hideCount = (p.isRiichi && nonDrawn.length > 0) ? 1 : 0;
-    const shownNonDrawn = hideCount > 0 ? nonDrawn.slice(0, -1) : nonDrawn;
-
-    for (const t of shownNonDrawn) {
-      const span = document.createElement('span');
-      span.className = 'tile-char';
-      span.textContent = '🀫\uFE0F';
-      handDiv.appendChild(span);
-    }
-    if (shownNonDrawn.length === 0) {
-      const span = document.createElement('span');
-      span.className = 'tile-char';
-      span.style.visibility = 'hidden';
-      span.textContent = '🀫\uFE0F';
-      handDiv.appendChild(span);
-    }
-
-    /* slot: show tile only when drawn and not riichi */
     if (drawnIdx >= 0 && !p.isRiichi) {
       slotTile.classList.remove('hidden');
     } else {
       slotTile.classList.add('hidden');
     }
-  }
 
-  const meldsDiv = area.querySelector('.opponent-melds');
-  meldsDiv.innerHTML = '';
-  for (const m of p.melds) {
-    const group = document.createElement('span');
-    group.className = 'meld-group';
-    for (const t of m.tiles) {
-      const span = document.createElement('span');
-      span.className = 'tile-char';
-      span.textContent = t.char;
-      group.appendChild(span);
+    meldsDiv.innerHTML = '';
+    for (const m of p.melds) {
+      const group = document.createElement('span');
+      group.className = 'meld-group';
+      for (const t of m.tiles) {
+        const span = document.createElement('span');
+        span.className = 'tile-char';
+        span.textContent = t.char;
+        group.appendChild(span);
+      }
+      meldsDiv.appendChild(group);
     }
-    meldsDiv.appendChild(group);
   }
 
   const discDiv = area.querySelector('.opponent-discards');
@@ -470,202 +503,201 @@ function renderOpponent(areaId, playerIdx, reveal) {
 
 // ===== Controls =====
 
+function setupControls() {
+  const ctrl = document.getElementById('controls');
+  const b = {};
+
+  function make(id, text, cls) {
+    const btn = document.createElement('button');
+    btn.id = id;
+    btn.textContent = text;
+    if (cls) btn.className = cls;
+    btn.hidden = true;
+    ctrl.appendChild(btn);
+    return btn;
+  }
+
+  b.ron = make('btn-ron', 'ロン', 'danger');
+  b.ron.addEventListener('click', () => {
+    game.humanCall(b.ron._action);
+    renderGame();
+    showRoundResult();
+  });
+
+  b.pon = make('btn-pon', 'ポン', 'primary');
+  b.pon.addEventListener('click', () => {
+    game.humanCall(b.pon._action);
+    continueGame();
+  });
+
+  b.chi = make('btn-chi', 'チー');
+  b.chi.addEventListener('click', () => {
+    const cs = b.chi._chiSets;
+    if (cs && cs.length <= 1) {
+      game.humanCall({ ...b.chi._action, chosenChiSet: 0 });
+      continueGame();
+    } else {
+      showChiModal();
+    }
+  });
+
+  b.kan = make('btn-kan', 'カン', 'primary');
+  b.kan.addEventListener('click', () => {
+    if (b.kan._mode === 'call') {
+      game.humanCall(b.kan._action);
+    } else {
+      game.humanKan(selectedTile);
+      selectedTile = -1;
+    }
+    continueGame();
+  });
+
+  b.passCall = make('btn-pass-call', '過');
+  b.passCall.addEventListener('click', () => {
+    game.humanCall({ type: 'pass' });
+    continueGame();
+  });
+
+  b.riichi = make('btn-riichi', '立直', 'primary');
+  b.riichi.addEventListener('click', () => {
+    const rc = b.riichi._candidates;
+    if (rc && rc.length === 1) {
+      game.humanRiichi(rc[0]);
+      selectedTile = -1;
+      continueGame();
+    } else if (rc && rc.length > 1) {
+      showRiichiModal(rc);
+    }
+  });
+
+  b.kakan = make('btn-kakan', '加槓', 'primary');
+  b.kakan.addEventListener('click', () => {
+    game.humanKan(selectedTile);
+    selectedTile = -1;
+    continueGame();
+  });
+
+  b.discard = make('btn-discard', '切る');
+  b.discard.addEventListener('click', () => {
+    if (selectedTile >= 0) {
+      game.humanDiscard(selectedTile);
+      selectedTile = -1;
+      continueGame();
+    }
+  });
+
+  b.tsumo = make('btn-tsumo', 'ツモ', 'danger');
+  b.tsumo.addEventListener('click', () => {
+    const p = game.players[0];
+    game.executeWin(0, 'tsumo', p.lastDraw);
+    renderGame();
+    showRoundResult();
+  });
+
+  b.passDraw = make('btn-pass-draw', 'スルー');
+  b.passDraw.addEventListener('click', () => {
+    game.availableActions = [];
+    game.phase = 'discard';
+    continueGame();
+  });
+
+  ctrl._buttons = b;
+}
+
 function renderControls() {
   const ctrl = document.getElementById('controls');
+  const b = ctrl._buttons;
+  if (!b) return;
 
-  const sig = game.phase + '|' + (game.availableActions || []).map(a =>
-    a.type + (a.chiSets ? a.chiSets.length : '')
-  ).join(',');
-  if (ctrl._lastSig === sig) return;
-  ctrl._lastSig = sig;
-
-  ctrl.innerHTML = '';
+  for (const key of Object.keys(b)) b[key].hidden = true;
 
   if (game.phase === 'call_pending') {
-    const available = game.availableActions || [];
-    for (const action of available) {
-      if (action.type === 'pass') {
-        const btn = document.createElement('button');
-        btn.textContent = '過';
-        btn.addEventListener('click', () => {
-          game.humanCall(action);
-          continueGame();
-        });
-        ctrl.appendChild(btn);
-      } else if (action.type === 'ron') {
-        const btn = document.createElement('button');
-        btn.className = 'danger';
-        btn.textContent = 'ロン';
-        btn.addEventListener('click', () => {
-          game.humanCall(action);
-          renderGame();
-          showRoundResult();
-        });
-        ctrl.appendChild(btn);
-      } else if (action.type === 'ron-no-yaku') {
-        const btn = document.createElement('button');
-        btn.className = 'disabled';
-        btn.textContent = 'ロン(無役)';
-        btn.disabled = true;
-        ctrl.appendChild(btn);
-      } else if (action.type === 'ron-furiten') {
-        const btn = document.createElement('button');
-        btn.className = 'disabled';
-        btn.textContent = 'ロン(振聽)';
-        btn.disabled = true;
-        ctrl.appendChild(btn);
-      } else if (action.type === 'pon') {
-        const btn = document.createElement('button');
-        btn.className = 'primary';
-        btn.textContent = 'ポン';
-        btn.addEventListener('click', () => {
-          game.humanCall(action);
-          continueGame();
-        });
-        ctrl.appendChild(btn);
-      } else if (action.type === 'chi') {
-        const chiSets = action.chiSets || [];
-        const btn = document.createElement('button');
-        btn.textContent = 'チー';
-        btn.addEventListener('click', () => {
-          if (chiSets.length <= 1) {
-            game.humanCall({ ...action, chosenChiSet: 0 });
-            continueGame();
-          } else {
-            showChiModal();
-          }
-        });
-        ctrl.appendChild(btn);
-      } else if (action.type === 'kan') {
-        const btn = document.createElement('button');
-        btn.className = 'primary';
-        btn.textContent = 'カン';
-        btn.addEventListener('click', () => {
-          game.humanCall(action);
-          continueGame();
-        });
-        ctrl.appendChild(btn);
+    for (const a of game.availableActions || []) {
+      if (a.type === 'ron') {
+        b.ron._action = a;
+        b.ron.className = 'danger';
+        b.ron.textContent = 'ロン';
+        b.ron.disabled = false;
+        b.ron.hidden = false;
+      } else if (a.type === 'ron-no-yaku') {
+        b.ron.className = 'disabled';
+        b.ron.textContent = 'ロン(無役)';
+        b.ron.disabled = true;
+        b.ron.hidden = false;
+      } else if (a.type === 'ron-furiten') {
+        b.ron.className = 'disabled';
+        b.ron.textContent = 'ロン(振聽)';
+        b.ron.disabled = true;
+        b.ron.hidden = false;
+      } else if (a.type === 'pon') {
+        b.pon._action = a;
+        b.pon.hidden = false;
+      } else if (a.type === 'chi') {
+        b.chi._action = a;
+        b.chi._chiSets = a.chiSets || [];
+        b.chi.hidden = false;
+      } else if (a.type === 'kan') {
+        b.kan._action = a;
+        b.kan._mode = 'call';
+        b.kan.textContent = 'カン';
+        b.kan.hidden = false;
+      } else if (a.type === 'pass') {
+        b.passCall.hidden = false;
       }
     }
   } else if ((game.phase === 'discard' || game.phase === 'dealer_first_discard') && game.currentPlayer === 0) {
     const p = game.players[0];
     if (p.isRiichi) {
-      const btn = document.createElement('button');
-      btn.className = 'primary';
-      btn.textContent = '立直中';
-      btn.disabled = true;
-      ctrl.appendChild(btn);
+      b.riichi.className = 'primary';
+      b.riichi.textContent = '立直中';
+      b.riichi.disabled = true;
+      b.riichi.hidden = false;
     } else if (p.melds.length === 0 && game.wall.getRemainingCount() >= 4) {
-      const riichiCandidates = [];
-      const seenKeys = new Set();
+      const rc = [];
+      const seen = new Set();
       for (let i = 0; i < p.hand.length; i++) {
         const k = p.hand[i].key();
-        if (seenKeys.has(k)) continue;
-        const testHand = p.hand.filter((_, j) => j !== i);
-        if (checkTenpai(testHand, p.melds)) {
-          riichiCandidates.push(i);
-          seenKeys.add(k);
+        if (seen.has(k)) continue;
+        if (checkTenpai(p.hand.filter((_, j) => j !== i), p.melds)) {
+          rc.push(i);
+          seen.add(k);
         }
       }
-      if (riichiCandidates.length > 0) {
-        const btn = document.createElement('button');
-        btn.className = 'primary';
-        btn.textContent = '立直';
-        btn.addEventListener('click', () => {
-          if (riichiCandidates.length === 1) {
-            game.humanRiichi(riichiCandidates[0]);
-            selectedTile = -1;
-            continueGame();
-          } else {
-            showRiichiModal(riichiCandidates);
-          }
-        });
-        ctrl.appendChild(btn);
+      if (rc.length > 0) {
+        b.riichi._candidates = rc;
+        b.riichi.className = 'primary';
+        b.riichi.textContent = '立直';
+        b.riichi.disabled = false;
+        b.riichi.hidden = false;
       }
     }
 
     if (selectedTile >= 0) {
       const counts = getCounts(p.hand);
-      const selectedKey = p.hand[selectedTile].key();
+      const key = p.hand[selectedTile].key();
 
       if (!p.isRiichi) {
-        if ((counts[selectedKey] || 0) >= 4) {
-          const btn = document.createElement('button');
-          btn.className = 'primary';
-          btn.textContent = 'カン';
-          btn.addEventListener('click', () => {
-            game.humanKan(selectedTile);
-            selectedTile = -1;
-            continueGame();
-          });
-          ctrl.appendChild(btn);
+        if ((counts[key] || 0) >= 4) {
+          b.kan._mode = 'hand';
+          b.kan.textContent = 'カン';
+          b.kan.hidden = false;
         }
-
         for (const m of p.melds) {
-          if (m.type === 'triplet' && !m.isKan && m.tiles[0].key() === selectedKey) {
-            const btn = document.createElement('button');
-            btn.className = 'primary';
-            btn.textContent = '加槓';
-            btn.addEventListener('click', () => {
-              game.humanKan(selectedTile);
-              selectedTile = -1;
-              continueGame();
-            });
-            ctrl.appendChild(btn);
+          if (m.type === 'triplet' && !m.isKan && m.tiles[0].key() === key) {
+            b.kakan.hidden = false;
             break;
           }
         }
       }
 
-      const btn = document.createElement('button');
-      btn.textContent = '切る';
-      btn.addEventListener('click', () => {
-        if (selectedTile >= 0) {
-          game.humanDiscard(selectedTile);
-          selectedTile = -1;
-          continueGame();
-        }
-      });
-      ctrl.appendChild(btn);
+      b.discard.hidden = false;
     }
   } else if (game.availableActions) {
-    for (const action of game.availableActions) {
-      if (action === 'discard') {
-        if (selectedTile >= 0) {
-          const btn = document.createElement('button');
-          btn.textContent = '切る';
-          btn.addEventListener('click', () => {
-            game.humanDiscard(selectedTile);
-            selectedTile = -1;
-            continueGame();
-          });
-          ctrl.appendChild(btn);
-        }
-      } else if (action === 'tsumo') {
-        const btn = document.createElement('button');
-        btn.className = 'danger';
-        btn.textContent = 'ツモ';
-        btn.addEventListener('click', () => {
-          const p = game.players[0];
-          const tile = p.lastDraw;
-          game.executeWin(0, 'tsumo', tile);
-          renderGame();
-          showRoundResult();
-        });
-        ctrl.appendChild(btn);
-      } else if (action === 'pass') {
-        const btn = document.createElement('button');
-        btn.textContent = 'スルー';
-        btn.addEventListener('click', () => {
-          game.availableActions = [];
-          game.phase = 'discard';
-          continueGame();
-        });
-        ctrl.appendChild(btn);
-      }
+    for (const a of game.availableActions) {
+      if (a === 'tsumo') b.tsumo.hidden = false;
+      else if (a === 'pass') b.passDraw.hidden = false;
     }
   }
-
 }
 
 // ===== Auto-Play =====
@@ -1005,6 +1037,10 @@ function showFinalResult() {
 function renderLog() {
   const el = document.getElementById('log-entries');
   if (!el) return;
+
+  const lastEntry = game.log[game.log.length - 1];
+  if (lastEntry && el._lastLogId === lastEntry.id) return;
+  el._lastLogId = lastEntry ? lastEntry.id : -1;
 
   // Simplified robust sync: If the first log entry doesn't match the DOM, re-render.
   const currentFirstEntryId = game.log.length > 0 ? String(game.log[0].id) : null;

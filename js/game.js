@@ -65,6 +65,7 @@ class Game {
         isTenpai: false,
         ippatsuRound: -1,
         lastDraw: null,
+        isTempFuriten: false,
       });
     }
     this.roundNumber = 0;
@@ -92,6 +93,7 @@ class Game {
       p.isTenpai = false;
       p.ippatsuRound = -1;
       p.lastDraw = null;
+      p.isTempFuriten = false;
     }
     for (let i = 0; i < 4; i++) {
       this.players[i].seatWind = ((i - this.dealerIndex + 4) % 4) + 1;
@@ -142,6 +144,7 @@ class Game {
       p.hand.push(tile);
       p.hand = Tile.sortTiles(p.hand);
       p.lastDraw = tile;
+      p.isTempFuriten = false;
       const isHuman = this.players[this.currentPlayer].isHuman;
       this.addLog(this.currentPlayer, isHuman ? '摸' : '摸牌', isHuman ? tile.name : '');
       this.turnCount++;
@@ -351,12 +354,20 @@ class Game {
       return false;
     }
 
+    for (const c of aiCalls) {
+      if (c.type === 'ron') {
+        this.players[c.playerIdx].isTempFuriten = true;
+      }
+    }
+
     this.advanceTurn();
     return false;
   }
 
   humanCall(callChoice) {
     if (callChoice.type === 'pass') {
+      const hadRon = this.availableCalls.some(c => c.playerIdx === 0 && c.type === 'ron');
+      if (hadRon) this.players[0].isTempFuriten = true;
       this.availableCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
       const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
       const chosenCall = aiDecideCall(this, aiCalls);
@@ -805,6 +816,7 @@ class Game {
 
   isFuriten(playerIdx) {
     const p = this.players[playerIdx];
+    if (p.isTempFuriten) return true;
     const waits = getWaitingTiles(p.hand, p.melds);
     if (waits.length === 0) return false;
     return waits.some(w => p.discards.some(d => d.key() === w.key()));
