@@ -308,7 +308,7 @@ function renderMeldTiles(group, meld, reveal) {
     } else {
       span.textContent = tiles[i].char;
     }
-    if (meld.type === 'sequence' && i === 1) {
+    if (meld.type === 'sequence' && i === (meld.calledIndex || 1)) {
       span.classList.add('called');
     } else if (meld.type === 'kan' && meld.isKan && i === tiles.length - 1) {
       span.classList.add('called');

@@ -425,8 +425,8 @@ class Game {
     if (type === 'chi') {
       this.addLog(playerIdx, 'チー', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
       const chiTileSet = call.chosenChiSet !== undefined ? call.chiSets[call.chosenChiSet] : call.chiSets[0];
-      const meldTiles = chiTileSet.filter(t => t.key() !== tile.key());
-      meldTiles.splice(1, 0, tile);
+      const meldTiles = chiTileSet.slice();
+      const calledIndex = meldTiles.findIndex(t => t.key() === tile.key());
       const newHand = [];
       const keepKeys = {};
       for (const ct of chiTileSet) {
@@ -442,7 +442,7 @@ class Game {
         }
       }
       p.hand = newHand;
-      p.melds.push({ type:'sequence', tiles:meldTiles, open:true, from: this.lastDiscardPlayer });
+      p.melds.push({ type:'sequence', tiles:meldTiles, open:true, from: this.lastDiscardPlayer, calledIndex });
       if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;
