@@ -393,25 +393,6 @@ function checkSanshokuDoujun(handInfo, gameState) {
   return [];
 }
 
-function checkSanshokuDoukou(handInfo, gameState) {
-  for (let i = 0; i < handInfo.melds.length; i++) {
-    if (handInfo.melds[i].type !== 'triplet') continue;
-    const v = handInfo.melds[i].tiles[0].value;
-    const suits = {};
-    suits[handInfo.melds[i].tiles[0].suit] = true;
-    for (let j = 0; j < handInfo.melds.length; j++) {
-      if (i === j || handInfo.melds[j].type !== 'triplet') continue;
-      if (handInfo.melds[j].tiles[0].value === v) {
-        suits[handInfo.melds[j].tiles[0].suit] = true;
-      }
-    }
-    if (suits.man && suits.pin && suits.sou) {
-      return [{ name:'三色同刻', han:2 }];
-    }
-  }
-  return [];
-}
-
 function checkIttsuu(handInfo, gameState) {
   for (const s of ['man','pin','sou']) {
     const seqs = handInfo.melds.filter(

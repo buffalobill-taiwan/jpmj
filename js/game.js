@@ -242,8 +242,6 @@ class Game {
     this.riichiDeclaredThisTurn = false;
     this.lastActionWasKan = false;
 
-    this.lastActionWasKan = false;
-
     let detail = tile.name;
     if (isRiichi) {
       detail += '（立直）';

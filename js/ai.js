@@ -346,8 +346,9 @@ function expertDiscard(game, playerIdx) {
 
     const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
     if (hasThreat) {
-      const danger = tileDangerLevel(game, tile, true);
-      val -= danger * 30;
+      const cfg = AI_DIFFICULTY[p.difficulty];
+      const danger = tileDangerLevel(game, tile, cfg.defenseLevel >= 2);
+      val -= danger * cfg.defenseLevel * 15;
     }
 
     if (indices.length >= 2) val += 50; // keep pairs
@@ -394,6 +395,12 @@ function normalDiscard(game, playerIdx) {
       : 0)
       + (waits.length > 0 ? Math.min(waits.length, 9) * 10 : 0)
       + (indices.length >= 2 ? 50 : 0);
+
+    const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
+    if (hasThreat && AI_DIFFICULTY[p.difficulty].defenseLevel > 0) {
+      const danger = tileDangerLevel(game, tile, false);
+      val -= danger * AI_DIFFICULTY[p.difficulty].defenseLevel * 10;
+    }
 
     evals.push({ idx: indices[0], val, shanten, isolated, priority: discardPriority(tile) });
   }
