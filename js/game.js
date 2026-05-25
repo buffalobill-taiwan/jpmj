@@ -550,6 +550,41 @@ class Game {
 
   // ===== Kan =====
 
+  // Build available kan options when drawing (for human player)
+  buildAvailableKans() {
+    const p = this.players[this.currentPlayer];
+    if (!p.isHuman) return [];
+    if (p.isRiichi) return [];
+    if (this.phase !== 'discard') return [];
+
+    const kans = [];
+    const handCounts = getCounts(p.hand);
+
+    // Option 1: 暗槓 (4 of a kind in hand)
+    for (const [k, c] of Object.entries(handCounts)) {
+      if (c === 4) {
+        const tile = p.hand.find(t => t.key() === k);
+        kans.push({ type: 'ankan', tile, meldIndex: -1, desc: `暗槓 ${tile.name}` });
+      }
+    }
+
+    // Option 2: 加槓 (add to existing triplet)
+    for (let mi = 0; mi < p.melds.length; mi++) {
+      const m = p.melds[mi];
+      if (m.type === 'triplet' && !m.isKan) {
+        const tileKey = m.tiles[0].key();
+        if ((handCounts[tileKey] || 0) >= 1) {
+          const tile = p.hand.find(t => t.key() === tileKey);
+          if (tile) {
+            kans.push({ type: 'kakan', tile, meldIndex: mi, desc: `加槓 ${tile.name}` });
+          }
+        }
+      }
+    }
+
+    return kans;
+  }
+
   humanKan(tileIdx) {
     const p = this.players[this.currentPlayer];
     if (!p.isHuman) return;
@@ -558,6 +593,7 @@ class Game {
     const tile = p.hand[tileIdx];
     const handCounts = getCounts(p.hand);
 
+    // 暗槓
     if ((handCounts[tile.key()] || 0) >= 4) {
       const newHand = [];
       let n = 4;
@@ -571,9 +607,11 @@ class Game {
       this.wall.addDoraIndicator();
       this.availableActions = [];
       this.phase = 'rinshan';
+      this.addLog(this.currentPlayer, '暗槓', tile.name);
       return;
     }
 
+    // 加槓
     for (const m of p.melds) {
       if (m.type === 'triplet' && m.tiles[0].key() === tile.key() && !m.isKan) {
         const newHand = [];
@@ -590,9 +628,50 @@ class Game {
         this.wall.addDoraIndicator();
         this.availableActions = [];
         this.phase = 'rinshan';
+        this.addLog(this.currentPlayer, '加槓', tile.name);
         return;
       }
     }
+  }
+
+  executeKan(kanOption) {
+    const p = this.players[this.currentPlayer];
+    const tile = kanOption.tile;
+    const handCounts = getCounts(p.hand);
+
+    if (kanOption.type === 'ankan') {
+      // 暗槓
+      const newHand = [];
+      let n = 4;
+      for (const t of p.hand) {
+        if (n > 0 && t.key() === tile.key()) { n--; }
+        else { newHand.push(t); }
+      }
+      p.hand = newHand;
+      p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
+      this.addLog(this.currentPlayer, '暗槓', tile.name);
+    } else if (kanOption.type === 'kakan') {
+      // 加槓
+      const meldIndex = kanOption.meldIndex;
+      const m = p.melds[meldIndex];
+      const newHand = [];
+      let removed = false;
+      for (const t of p.hand) {
+        if (!removed && t.key() === tile.key()) { removed = true; }
+        else { newHand.push(t); }
+      }
+      p.hand = newHand;
+      m.type = 'kan';
+      m.tiles.push(tile);
+      m.isKan = true;
+      m.open = true;
+      this.addLog(this.currentPlayer, '加槓', tile.name);
+    }
+
+    this.lastActionWasKan = true;
+    this.wall.addDoraIndicator();
+    this.availableActions = [];
+    this.phase = 'rinshan';
   }
 
   // ===== AI Kan Handling =====
