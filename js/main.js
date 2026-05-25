@@ -585,11 +585,18 @@ function setupControls() {
   b.kan.addEventListener('click', () => {
     if (b.kan._mode === 'call') {
       game.humanCall(b.kan._action);
+      continueGame();
     } else {
-      game.humanKan(selectedTile);
-      selectedTile = -1;
+      // Hand kan mode - check available options
+      const kans = game.buildAvailableKans();
+      if (kans.length > 1) {
+        showKanModal(kans);
+      } else if (kans.length === 1) {
+        game.executeKan(kans[0]);
+        selectedTile = -1;
+        continueGame();
+      }
     }
-    continueGame();
   });
 
   b.passCall = make('btn-pass-call', '過');
@@ -875,6 +882,27 @@ function showChiModal() {
     const passAction = game.availableActions.find(a => a.type === 'pass');
     if (passAction) game.humanCall(passAction);
     continueGame();
+  };
+  modal.style.display = 'flex';
+}
+
+function showKanModal(kans) {
+  const modal = document.getElementById('kan-modal');
+  const options = document.getElementById('kan-options');
+  options.innerHTML = '';
+  for (const kan of kans) {
+    const btn = document.createElement('button');
+    btn.textContent = kan.desc;
+    btn.addEventListener('click', () => {
+      modal.style.display = 'none';
+      game.executeKan(kan);
+      selectedTile = -1;
+      continueGame();
+    });
+    options.appendChild(btn);
+  }
+  document.getElementById('kan-cancel').onclick = () => {
+    modal.style.display = 'none';
   };
   modal.style.display = 'flex';
 }
