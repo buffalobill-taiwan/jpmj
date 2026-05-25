@@ -263,9 +263,14 @@ html, body {
 /* Side opponents: vertical tiles with rotation */
 #opponent-right .tiles-row,
 #opponent-left .tiles-row {
-  flex-direction: column;
   align-items: center;
   gap: 0;
+}
+#opponent-left .tiles-row {
+  flex-direction: column;
+}
+#opponent-right .tiles-row {
+  flex-direction: column-reverse;
 }
 
 #opponent-right .opponent-discards,
