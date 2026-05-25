@@ -400,7 +400,7 @@ class Game {
         else { newHand.push(t); }
       }
       p.hand = newHand;
-      p.melds.push({ type:'triplet', tiles:[tile, tile, tile], open:true, from: this.lastDiscardPlayer });
+      p.melds.push({ type:'triplet', tiles:[tile, tile, tile], open:true, from: this.lastDiscardPlayer, calledIndex:0 });
       if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;
@@ -472,7 +472,7 @@ class Game {
         else { newHand.push(t); }
       }
       p.hand = newHand;
-      p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:true, from: this.lastDiscardPlayer });
+      p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:true, from: this.lastDiscardPlayer, calledIndex:0 });
       if (this.lastDiscard) this.lastDiscard.called = true;
       this.lastDiscard = null;
       this.lastDiscardPlayer = -1;

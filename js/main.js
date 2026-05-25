@@ -298,6 +298,27 @@ function renderCenterInfo() {
   }
 }
 
+function renderMeldTiles(group, meld, reveal) {
+  const tiles = meld.tiles;
+  for (let i = 0; i < tiles.length; i++) {
+    const span = document.createElement('span');
+    span.className = 'tile-char';
+    if (!reveal && meld.type === 'kan' && !meld.open && (i === 1 || i === 2)) {
+      span.textContent = '🀫' + VARIANT_SELECTOR;
+    } else {
+      span.textContent = tiles[i].char;
+    }
+    if (meld.type === 'sequence' && i === 1) {
+      span.classList.add('called');
+    } else if (meld.type === 'kan' && meld.isKan && i === tiles.length - 1) {
+      span.classList.add('called');
+    } else if (meld.open && (meld.type === 'triplet' || meld.type === 'kan') && i === (meld.calledIndex || 0)) {
+      span.classList.add('called');
+    }
+    group.appendChild(span);
+  }
+}
+
 function renderPlayerArea() {
   const p = game.players[0];
 
@@ -320,12 +341,7 @@ function renderPlayerArea() {
     for (const m of p.melds) {
       const group = document.createElement('span');
       group.className = 'meld-group';
-      for (const t of m.tiles) {
-        const span = document.createElement('span');
-        span.className = 'tile-char';
-        span.textContent = t.char;
-        group.appendChild(span);
-      }
+      renderMeldTiles(group, m, true);
       meldsDiv.appendChild(group);
     }
 
@@ -508,12 +524,7 @@ function renderOpponent(areaId, playerIdx, reveal) {
     for (const m of p.melds) {
       const group = document.createElement('span');
       group.className = 'meld-group';
-      for (const t of m.tiles) {
-        const span = document.createElement('span');
-        span.className = 'tile-char';
-        span.textContent = t.char;
-        group.appendChild(span);
-      }
+      renderMeldTiles(group, m, false);
       meldsDiv.appendChild(group);
     }
   }
