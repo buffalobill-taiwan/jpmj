@@ -12,5 +12,38 @@
   <rect x="0.5" y="0" width="33" height="40" rx="4" fill="url(#shade)"/>
   <rect x="1" y="0.5" width="32" height="39" rx="4" fill="url(#bg)" stroke="#8B7355" stroke-width="1.2"/>
   <rect x="4" y="3.5" width="26" height="33" rx="2" fill="none" stroke="#c9a84c" stroke-width="0.8"/>
-  <text x="17" y="30" font-size="26" text-anchor="middle" fill="#1a7a1a">🀐</text>
+
+  <!-- Bamboo stalk -->
+  <rect x="15" y="14" width="4" height="22" rx="1" fill="#1a7a1a"/>
+
+  <!-- Bamboo nodes -->
+  <rect x="14" y="19" width="6" height="1.5" rx="0.5" fill="#146014"/>
+  <rect x="14" y="25.5" width="6" height="1.5" rx="0.5" fill="#146014"/>
+  <rect x="14" y="31.5" width="6" height="1.5" rx="0.5" fill="#146014"/>
+
+  <!-- Bird body (vertical oval) -->
+  <ellipse cx="17" cy="10" rx="4" ry="5.5" fill="#2d8a2d"/>
+
+  <!-- Bird head -->
+  <circle cx="19.5" cy="6.5" r="3" fill="#2d8a2d"/>
+
+  <!-- Beak -->
+  <polygon points="22.5,6 26.5,7 22.5,8" fill="#d4a017"/>
+
+  <!-- Eye -->
+  <circle cx="20.3" cy="5.8" r="0.9" fill="#1a1a1a"/>
+  <circle cx="20.5" cy="5.6" r="0.35" fill="#fff"/>
+
+  <!-- Tail feathers (left side) -->
+  <polygon points="13,10 8,14 9.5,15 7,17 9.5,16 13,13" fill="#1a6a1a"/>
+
+  <!-- Wing -->
+  <ellipse cx="17" cy="10.5" rx="2.5" ry="3.5" fill="#1a7a1a"/>
+  <line x1="15" y1="8.5" x2="19" y2="8.5" stroke="#146014" stroke-width="0.5"/>
+  <line x1="15" y1="10" x2="19" y2="10" stroke="#146014" stroke-width="0.5"/>
+  <line x1="15" y1="11.5" x2="18" y2="11.5" stroke="#146014" stroke-width="0.5"/>
+
+  <!-- Legs -->
+  <line x1="16.5" y1="15" x2="16" y2="17" stroke="#8B6914" stroke-width="0.7"/>
+  <line x1="17.5" y1="15" x2="18" y2="17" stroke="#8B6914" stroke-width="0.7"/>
 </svg>
