@@ -18,6 +18,28 @@ function init() {
   renderTitleScreen();
   bindTitleEvents();
   setupLogDrag();
+  setupAutoBtn();
+}
+
+function setupAutoBtn() {
+  const container = document.getElementById('auto-btn-container');
+  const btn = document.createElement('button');
+  btn.id = 'auto-btn';
+  btn.addEventListener('click', () => {
+    autoPlay = !autoPlay;
+    updateAutoBtn();
+    renderGame();
+    if (autoPlay) continueGame();
+  });
+  container.appendChild(btn);
+  updateAutoBtn();
+}
+
+function updateAutoBtn() {
+  const btn = document.getElementById('auto-btn');
+  if (!btn) return;
+  btn.className = 'auto-btn';
+  btn.textContent = autoPlay ? '中止' : '託管';
 }
 
 function setupLogDrag() {
@@ -151,6 +173,7 @@ function renderGame() {
   renderOpponent('opponent-left', 3);
   renderControls();
   renderLog();
+  updateAutoBtn();
 }
 
 function updateTileChars(container, tiles, count, posFn) {
@@ -449,6 +472,13 @@ function renderOpponent(areaId, playerIdx, reveal) {
 
 function renderControls() {
   const ctrl = document.getElementById('controls');
+
+  const sig = game.phase + '|' + (game.availableActions || []).map(a =>
+    a.type + (a.chiSets ? a.chiSets.length : '')
+  ).join(',');
+  if (ctrl._lastSig === sig) return;
+  ctrl._lastSig = sig;
+
   ctrl.innerHTML = '';
 
   if (game.phase === 'call_pending') {
@@ -636,17 +666,6 @@ function renderControls() {
     }
   }
 
-  if (!game.gameOver && !game.roundOver) {
-    const autoBtn = document.createElement('button');
-    autoBtn.className = 'auto-btn';
-    autoBtn.textContent = autoPlay ? '中止' : '託管';
-    autoBtn.addEventListener('click', () => {
-      autoPlay = !autoPlay;
-      renderGame();
-      if (autoPlay) continueGame();
-    });
-    ctrl.appendChild(autoBtn);
-  }
 }
 
 // ===== Auto-Play =====
