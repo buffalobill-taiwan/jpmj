@@ -14,7 +14,7 @@ open http://localhost:8080
 ## 功能
 
 - 136 張牌（無花牌、無赤牌）
-- Unicode U+1F000..U+1F02F 渲染牌面（使用 [I.Mahjong 字型](https://github.com/SyaoranHinata/I.Mahjong/)）
+- Unicode U+1F000..U+1F02F 渲染牌面（使用 [Riichi-Mahjong 字型](https://github.com/rutopio/Japanese-Mahjong-Font-with-OpenType/)）
 - 完整的標準役種支援：
     - **一般役**：立直、一發、**雙立直**、門前清自摸和、平和、斷幺九、一盃口、二盃口、役牌、**嶺上開花**、**槍槓**、海底、河底、三色同順/同刻、一氣通貫、對對和、三暗刻、混全/純全、混老頭、小三元、三槓子、混一色、清一色。
     - **役滿**：天和、地和、**國士無雙**、**大三元**、**四暗刻**、**字一色**、**綠一色**、**清老頭**、**九蓮寶燈**、**四槓子**。
