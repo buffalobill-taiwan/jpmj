@@ -674,7 +674,7 @@ function renderControls() {
       if (a.type === 'ron') {
         b.ron._action = a;
         b.ron.className = 'danger';
-        b.ron.textContent = 'ロン';
+        b.ron.textContent = game.wouldTriggerSanchaRon(0) ? 'ロン(流局)' : 'ロン';
         b.ron.disabled = false;
         b.ron.hidden = false;
       } else if (a.type === 'ron-no-yaku') {
@@ -725,10 +725,26 @@ function renderControls() {
       if (rc.length > 0) {
         b.riichi._candidates = rc;
         b.riichi.className = 'primary';
-        b.riichi.textContent = '立直';
+        b.riichi.textContent = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : '立直';
         b.riichi.disabled = false;
         b.riichi.hidden = false;
       }
+    }
+    if (selectedTile >= 0) {
+      const counts = getCounts(p.hand);
+      const tile = p.hand[selectedTile];
+      const key = tile.key();
+      if (!p.isRiichi) {
+        let canAnkan = (counts[key] || 0) >= 4;
+        let canKakan = p.melds.some(m => m.type === 'triplet' && !m.isKan && m.tiles[0].key() === key);
+        if (canAnkan || canKakan) {
+          b.kan._mode = 'hand';
+          b.kan.textContent = game.wouldTriggerSuukantsuAbort(0) ? 'カン(流局)' : 'カン';
+          b.kan.hidden = false;
+        }
+      }
+      b.discard.textContent = game.wouldTriggerSuufonRendai(tile) ? '切る(流局)' : '切る';
+      b.discard.hidden = false;
     }
   } else if (game.phase === 'discard' && game.currentPlayer === 0) {
     const p = game.players[0];
@@ -754,7 +770,7 @@ function renderControls() {
       if (rc.length > 0) {
         b.riichi._candidates = rc;
         b.riichi.className = 'primary';
-        b.riichi.textContent = '立直';
+        b.riichi.textContent = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : '立直';
         b.riichi.disabled = false;
         b.riichi.hidden = false;
       }
@@ -974,6 +990,23 @@ function showRoundResult() {
     content.innerHTML = `
       <h3>四風連打 流局</h3>
       <div class="detail">四家第一打皆為同一風牌</div>
+      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
+      <button id="next-round-btn">次局へ</button>
+    `;
+  } else if (game.roundResult.winType === 'suucha_riichi') {
+    const r = game.roundResult;
+    content.innerHTML = `
+      <h3>四家立直 流局</h3>
+      <div class="detail">四家皆立直</div>
+      <div class="detail">各立直棒歸還</div>
+      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
+      <button id="next-round-btn">次局へ</button>
+    `;
+  } else if (game.roundResult.winType === 'sancha_ron') {
+    const r = game.roundResult;
+    content.innerHTML = `
+      <h3>三家和 流局</h3>
+      <div class="detail">同一張牌被三家榮和</div>
       <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
       <button id="next-round-btn">次局へ</button>
     `;

@@ -24,6 +24,10 @@ class Game {
     this.firstRoundActive = false;
     this.firstDiscards = [];
     this.kanDeclarers = [];
+    this.riichiDeclarers = [];
+    this.suuchaRiichiPending = false;
+    this.sanchaRonCandidates = [];
+    this.sanchaRonPending = false;
     this.log = [];
     this.logGroup = 0;
     this.lastLogPlayer = -1;
@@ -86,6 +90,10 @@ class Game {
     this.firstRoundActive = true;
     this.firstDiscards = [];
     this.kanDeclarers = [];
+    this.riichiDeclarers = [];
+    this.suuchaRiichiPending = false;
+    this.sanchaRonCandidates = [];
+    this.sanchaRonPending = false;
     const wind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
     const label = `${wind}${(this.roundNumber % 4) + 1}局`;
     this.addSystemLog('開始', label);
@@ -356,6 +364,9 @@ class Game {
       }
     }
 
+    this.sanchaRonCandidates = calls.filter(c => c.type === 'ron').map(c => c.playerIdx);
+    this.sanchaRonPending = this.sanchaRonCandidates.length >= 3;
+
     calls.sort((a, b) => {
       const pri = { ron:0, 'ron-no-yaku':1, 'ron-furiten':2, kan:3, pon:4, chi:5 };
       return (pri[a.type] ?? 99) - (pri[b.type] ?? 99);
@@ -422,6 +433,10 @@ class Game {
       return;
     }
 
+    if (callChoice.type === 'ron' && this.wouldTriggerSanchaRon(callChoice.playerIdx)) {
+      this.handleSanchaRon();
+      return;
+    }
     this.executeCall(callChoice);
   }
 
@@ -561,6 +576,11 @@ class Game {
   }
 
   advanceTurn() {
+    if (this.suuchaRiichiPending) {
+      this.suuchaRiichiPending = false;
+      this.handleSuuchaRiichi();
+      return;
+    }
     if (this.firstRoundActive && this.firstDiscards.length === 4) {
       const first = this.firstDiscards[0];
       if (first.isWind && this.firstDiscards.every(t => t.key() === first.key())) {
@@ -602,6 +622,10 @@ class Game {
     p.isRiichi = true;
     p.riichiTurn = this.turnCount;
     this.addLog(this.currentPlayer, '立直', tile.name);
+    this.riichiDeclarers.push(this.currentPlayer);
+    if (this.riichiDeclarers.length === 4) {
+      this.suuchaRiichiPending = true;
+    }
     this.executeDiscard(this.currentPlayer, tileIdx, true);
     if (this.phase === 'call_pending') {
       p.ippatsuRound = this.turnCount;
@@ -618,7 +642,7 @@ class Game {
     const p = this.players[this.currentPlayer];
     if (!p.isHuman) return [];
     if (p.isRiichi) return [];
-    if (this.phase !== 'discard') return [];
+    if (this.phase !== 'discard' && this.phase !== 'dealer_first_discard') return [];
 
     const kans = [];
     const handCounts = getCounts(p.hand);
@@ -892,6 +916,58 @@ class Game {
     return new Set(allDeclarers).size > 1;
   }
 
+  wouldTriggerSuuchaRiichi(playerIdx) {
+    return this.riichiDeclarers.length >= 3 && !this.riichiDeclarers.includes(playerIdx);
+  }
+
+  handleSuuchaRiichi() {
+    this.addSystemLog('流局', '四家立直');
+    for (const p of this.players) {
+      p.isRiichi = false;
+      p.riichiTurn = -1;
+      p.score += 1000;
+    }
+    this.riichiSticks = 0;
+    const nextWind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
+    const nextRoundLabel = `${nextWind}${(this.roundNumber % 4) + 1}局`;
+    this.roundResult = {
+      winner: -1,
+      winType: 'suucha_riichi',
+      honba: this.honba,
+      riichiSticks: 0,
+      isRenchan: true,
+      nextRoundLabel,
+    };
+    this.roundOver = true;
+    this.phase = 'round_end';
+  }
+
+  wouldTriggerSanchaRon(playerIdx) {
+    if (!this.sanchaRonPending) return false;
+    const pos = this.sanchaRonCandidates.indexOf(playerIdx);
+    return pos >= 2;
+  }
+
+  handleSanchaRon() {
+    this.addSystemLog('流局', '三家和');
+    for (const p of this.players) {
+      p.isRiichi = false;
+      p.riichiTurn = -1;
+    }
+    const nextWind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
+    const nextRoundLabel = `${nextWind}${(this.roundNumber % 4) + 1}局`;
+    this.roundResult = {
+      winner: -1,
+      winType: 'sancha_ron',
+      honba: this.honba,
+      riichiSticks: this.riichiSticks,
+      isRenchan: true,
+      nextRoundLabel,
+    };
+    this.roundOver = true;
+    this.phase = 'round_end';
+  }
+
   handleSuukantsuAbort() {
     this.addSystemLog('流局', '四槓散了');
     for (const p of this.players) {
@@ -1054,7 +1130,7 @@ class Game {
   }
 
   endRound() {
-    if (this.roundResult.winType === 'kyuushu_kyuuhai' || this.roundResult.winType === 'suufon_rendai' || this.roundResult.winType === 'suukantsu_abort') {
+    if (this.roundResult.winType === 'kyuushu_kyuuhai' || this.roundResult.winType === 'suufon_rendai' || this.roundResult.winType === 'suukantsu_abort' || this.roundResult.winType === 'suucha_riichi' || this.roundResult.winType === 'sancha_ron') {
       this.honba++;
     } else if (this.roundResult.winner === -1) {
       const dealerTenpai = this.players[this.dealerIndex].isTenpai;
