@@ -697,7 +697,7 @@ function renderControls() {
       } else if (a.type === 'kan') {
         b.kan._action = a;
         b.kan._mode = 'call';
-        b.kan.textContent = 'カン';
+        b.kan.textContent = game.wouldTriggerSuukantsuAbort(a.playerIdx) ? 'カン(流局)' : 'カン';
         b.kan.hidden = false;
       } else if (a.type === 'pass') {
         b.passCall.hidden = false;
@@ -770,7 +770,7 @@ function renderControls() {
         let canKakan = p.melds.some(m => m.type === 'triplet' && !m.isKan && m.tiles[0].key() === key);
         if (canAnkan || canKakan) {
           b.kan._mode = 'hand';
-          b.kan.textContent = 'カン';
+          b.kan.textContent = game.wouldTriggerSuukantsuAbort(0) ? 'カン(流局)' : 'カン';
           b.kan.hidden = false;
         }
       }
@@ -974,6 +974,14 @@ function showRoundResult() {
     content.innerHTML = `
       <h3>四風連打 流局</h3>
       <div class="detail">四家第一打皆為同一風牌</div>
+      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
+      <button id="next-round-btn">次局へ</button>
+    `;
+  } else if (game.roundResult.winType === 'suukantsu_abort') {
+    const r = game.roundResult;
+    content.innerHTML = `
+      <h3>四槓散了 流局</h3>
+      <div class="detail">第四個槓成立</div>
       <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
       <button id="next-round-btn">次局へ</button>
     `;

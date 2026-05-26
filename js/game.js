@@ -23,6 +23,7 @@ class Game {
     this.discardAfterRiichi = null;
     this.firstRoundActive = false;
     this.firstDiscards = [];
+    this.kanDeclarers = [];
     this.log = [];
     this.logGroup = 0;
     this.lastLogPlayer = -1;
@@ -84,6 +85,7 @@ class Game {
     this.lastLogPlayer = -1;
     this.firstRoundActive = true;
     this.firstDiscards = [];
+    this.kanDeclarers = [];
     const wind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
     const label = `${wind}${(this.roundNumber % 4) + 1}局`;
     this.addSystemLog('開始', label);
@@ -525,6 +527,11 @@ class Game {
       this.lastDiscardPlayer = -1;
       this.lastActionWasKan = true;
       this.wall.addDoraIndicator();
+      this.kanDeclarers.push(playerIdx);
+      if (this.kanDeclarers.length >= 4 && new Set(this.kanDeclarers).size > 1) {
+        this.handleSuukantsuAbort();
+        return;
+      }
       this.currentPlayer = playerIdx;
       for (let i = 0; i < 4; i++) {
         if (this.players[i].ippatsuRound >= 0) this.players[i].ippatsuRound = -1;
@@ -677,6 +684,11 @@ class Game {
 
     this.lastActionWasKan = true;
     this.wall.addDoraIndicator();
+    this.kanDeclarers.push(this.currentPlayer);
+    if (this.kanDeclarers.length >= 4 && new Set(this.kanDeclarers).size > 1) {
+      this.handleSuukantsuAbort();
+      return;
+    }
     this.availableActions = [];
     this.phase = 'rinshan';
   }
@@ -702,6 +714,11 @@ class Game {
         p.hand = newHand;
         p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
         this.wall.addDoraIndicator();
+        this.kanDeclarers.push(playerIdx);
+        if (this.kanDeclarers.length >= 4 && new Set(this.kanDeclarers).size > 1) {
+          this.handleSuukantsuAbort();
+          return true;
+        }
         this.addLog(playerIdx, '暗槓', tile.name);
         this.availableActions = [];
         this.phase = 'rinshan';
@@ -731,6 +748,11 @@ class Game {
               m.isKan = true;
               this.lastActionWasKan = true;
               this.wall.addDoraIndicator();
+              this.kanDeclarers.push(playerIdx);
+              if (this.kanDeclarers.length >= 4 && new Set(this.kanDeclarers).size > 1) {
+                this.handleSuukantsuAbort();
+                return true;
+              }
               this.addLog(playerIdx, '加槓', tile.name);
               this.availableActions = [];
               this.phase = 'rinshan';
@@ -862,6 +884,32 @@ class Game {
     if (!tile || !tile.isWind) return false;
     const first = this.firstDiscards[0];
     return first.isWind && this.firstDiscards.every(t => t.key() === first.key()) && tile.key() === first.key();
+  }
+
+  wouldTriggerSuukantsuAbort(playerIdx) {
+    if (this.kanDeclarers.length + 1 < 4) return false;
+    const allDeclarers = [...this.kanDeclarers, playerIdx];
+    return new Set(allDeclarers).size > 1;
+  }
+
+  handleSuukantsuAbort() {
+    this.addSystemLog('流局', '四槓散了');
+    for (const p of this.players) {
+      p.isRiichi = false;
+      p.riichiTurn = -1;
+    }
+    const nextWind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
+    const nextRoundLabel = `${nextWind}${(this.roundNumber % 4) + 1}局`;
+    this.roundResult = {
+      winner: -1,
+      winType: 'suukantsu_abort',
+      honba: this.honba,
+      riichiSticks: this.riichiSticks,
+      isRenchan: true,
+      nextRoundLabel,
+    };
+    this.roundOver = true;
+    this.phase = 'round_end';
   }
 
   handleSuufonRendai() {
@@ -1006,7 +1054,7 @@ class Game {
   }
 
   endRound() {
-    if (this.roundResult.winType === 'kyuushu_kyuuhai' || this.roundResult.winType === 'suufon_rendai') {
+    if (this.roundResult.winType === 'kyuushu_kyuuhai' || this.roundResult.winType === 'suufon_rendai' || this.roundResult.winType === 'suukantsu_abort') {
       this.honba++;
     } else if (this.roundResult.winner === -1) {
       const dealerTenpai = this.players[this.dealerIndex].isTenpai;
