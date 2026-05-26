@@ -109,6 +109,10 @@ class ExpertAI extends MahjongAI {
     return Math.random() < 0.8;
   }
 
+  decideKyuushu(game, playerIdx) {
+    return false;
+  }
+
   decideKan(game, playerIdx) {
     const p = game.players[playerIdx];
     const shantenBefore = this.estimateShanten(p.hand, p.melds);

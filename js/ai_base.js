@@ -32,6 +32,10 @@ class MahjongAI {
     return false;
   }
 
+  decideKyuushu(game, playerIdx) {
+    return false;
+  }
+
   // --- Shared Utility Methods (Heuristics) ---
 
   /**

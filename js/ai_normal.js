@@ -85,4 +85,8 @@ class NormalAI extends MahjongAI {
   decideRiichi(game, playerIdx) {
     return Math.random() < 0.5;
   }
+
+  decideKyuushu(game, playerIdx) {
+    return true;
+  }
 }

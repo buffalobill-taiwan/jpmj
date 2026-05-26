@@ -603,6 +603,13 @@ function setupControls() {
     continueGame();
   });
 
+  b.kyuushu = make('btn-kyuushu', '九種九牌');
+  b.kyuushu.addEventListener('click', () => {
+    game.handleKyuushuKyuuhai(0);
+    renderGame();
+    showRoundResult();
+  });
+
   b.riichi = make('btn-riichi', '立直', 'primary');
   b.riichi.addEventListener('click', () => {
     const rc = b.riichi._candidates;
@@ -696,8 +703,38 @@ function renderControls() {
         b.passCall.hidden = false;
       }
     }
-  } else if ((game.phase === 'discard' || game.phase === 'dealer_first_discard') && game.currentPlayer === 0) {
+  } else if (game.phase === 'dealer_first_discard' && game.currentPlayer === 0) {
     const p = game.players[0];
+    if (game.availableActions.includes('kyuushu')) {
+      b.kyuushu.hidden = false;
+    }
+    if (game.availableActions.includes('discard')) {
+      b.discard.hidden = false;
+    }
+    if (!p.isRiichi && p.melds.length === 0 && game.wall.getRemainingCount() >= 4) {
+      const rc = [];
+      const seen = new Set();
+      for (let i = 0; i < p.hand.length; i++) {
+        const k = p.hand[i].key();
+        if (seen.has(k)) continue;
+        if (checkTenpai(p.hand.filter((_, j) => j !== i), p.melds)) {
+          rc.push(i);
+          seen.add(k);
+        }
+      }
+      if (rc.length > 0) {
+        b.riichi._candidates = rc;
+        b.riichi.className = 'primary';
+        b.riichi.textContent = '立直';
+        b.riichi.disabled = false;
+        b.riichi.hidden = false;
+      }
+    }
+  } else if (game.phase === 'discard' && game.currentPlayer === 0) {
+    const p = game.players[0];
+    if (game.availableActions.includes('kyuushu')) {
+      b.kyuushu.hidden = false;
+    }
     if (p.isRiichi) {
       b.riichi.className = 'primary';
       b.riichi.textContent = '立直中';
@@ -752,7 +789,19 @@ function renderControls() {
 function processAutoPlay() {
   // A. Discard phase
   if (game.phase === 'dealer_first_discard' || game.phase === 'discard') {
-    if (game.players[game.currentPlayer].isHuman && game.availableActions.includes('discard')) {
+    if (game.players[game.currentPlayer].isHuman) {
+      if (game.availableActions.includes('kyuushu')) {
+        const p = game.players[0];
+        if (p.ai.decideKyuushu(game, 0)) {
+          game.handleKyuushuKyuuhai(0);
+          renderGame();
+          showRoundResult();
+          return;
+        }
+        // Player passes on kyuushu, remove from available actions
+        game.availableActions = game.availableActions.filter(a => a !== 'kyuushu');
+      }
+      if (!game.availableActions.includes('discard')) return;
       if (game.handleAIKan(0)) return;
       const p = game.players[0];
       if (!p.isRiichi && p.melds.length === 0) {
@@ -918,7 +967,16 @@ function showRoundResult() {
   const overlay = document.getElementById('round-result');
   const content = overlay.querySelector('#round-result-content');
 
-  if (game.roundResult.winType === 'exhaustive') {
+  if (game.roundResult.winType === 'kyuushu_kyuuhai') {
+    const r = game.roundResult;
+    const declarer = game.players[r.declarer].name;
+    content.innerHTML = `
+      <h3>九種九牌 流局</h3>
+      <div class="detail">${declarer} 宣告九種九牌</div>
+      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
+      <button id="next-round-btn">次局へ</button>
+    `;
+  } else if (game.roundResult.winType === 'exhaustive') {
     const r = game.roundResult;
     const tenpaiStr = r.tenpaiPlayers.length > 0 ? r.tenpaiPlayers.map(i => game.players[i].name).join('、') : '無';
     const notenStr = r.notenPlayers.length > 0 ? r.notenPlayers.map(i => game.players[i].name).join('、') : '無';

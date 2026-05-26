@@ -126,6 +126,16 @@ class Game {
     if (this.gameOver || this.roundOver) return true;
 
     if (this.phase === 'dealer_first_discard') {
+      if (this.canDeclareKyuushu(this.currentPlayer)) {
+        if (this.players[this.currentPlayer].isHuman) {
+          this.availableActions = ['kyuushu', 'discard'];
+          return true;
+        }
+        if (this.players[this.currentPlayer].ai.decideKyuushu(this, this.currentPlayer)) {
+          this.handleKyuushuKyuuhai(this.currentPlayer);
+          return true;
+        }
+      }
       if (this.players[this.currentPlayer].isHuman) {
         this.availableActions = ['discard'];
         return true;
@@ -176,6 +186,16 @@ class Game {
     }
 
     if (this.phase === 'discard') {
+      if (this.turnCount <= 3 && this.canDeclareKyuushu(this.currentPlayer)) {
+        if (this.players[this.currentPlayer].isHuman) {
+          this.availableActions = ['kyuushu', 'discard'];
+          return true;
+        }
+        if (this.players[this.currentPlayer].ai.decideKyuushu(this, this.currentPlayer)) {
+          this.handleKyuushuKyuuhai(this.currentPlayer);
+          return true;
+        }
+      }
       if (this.players[this.currentPlayer].isHuman) {
         this.availableActions = ['discard'];
         return true;
@@ -703,6 +723,16 @@ class Game {
     return false;
   }
 
+  canDeclareKyuushu(playerIdx) {
+    const p = this.players[playerIdx];
+    if (p.melds.length > 0) return false;
+    const terminalTypes = new Set();
+    for (const t of p.hand) {
+      if (t.isTerminal) terminalTypes.add(t.key());
+    }
+    return terminalTypes.size >= 9;
+  }
+
   checkTsumo(playerIdx) {
     const p = this.players[playerIdx];
     if (!p.lastDraw) return false;
@@ -803,6 +833,27 @@ class Game {
       p.score += this.riichiSticks * 1000;
       this.riichiSticks = 0;
     }
+  }
+
+  handleKyuushuKyuuhai(playerIdx) {
+    this.addSystemLog('流局', '九種九牌 by ' + this.players[playerIdx].name);
+    for (const p of this.players) {
+      p.isRiichi = false;
+      p.riichiTurn = -1;
+    }
+    const nextWind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
+    const nextRoundLabel = `${nextWind}${(this.roundNumber % 4) + 1}局`;
+    this.roundResult = {
+      winner: -1,
+      winType: 'kyuushu_kyuuhai',
+      declarer: playerIdx,
+      honba: this.honba,
+      riichiSticks: this.riichiSticks,
+      isRenchan: true,
+      nextRoundLabel,
+    };
+    this.roundOver = true;
+    this.phase = 'round_end';
   }
 
   handleExhaustiveDraw() {
@@ -906,7 +957,9 @@ class Game {
   }
 
   endRound() {
-    if (this.roundResult.winner === -1) {
+    if (this.roundResult.winType === 'kyuushu_kyuuhai') {
+      this.honba++;
+    } else if (this.roundResult.winner === -1) {
       const dealerTenpai = this.players[this.dealerIndex].isTenpai;
       if (!dealerTenpai) {
         this.dealerIndex = (this.dealerIndex + 1) % 4;

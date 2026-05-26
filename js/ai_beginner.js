@@ -49,4 +49,8 @@ class BeginnerAI extends MahjongAI {
   decideRiichi(game, playerIdx) {
     return Math.random() < 0.2;
   }
+
+  decideKyuushu(game, playerIdx) {
+    return true;
+  }
 }
