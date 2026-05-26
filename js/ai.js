@@ -485,13 +485,19 @@ function expertDiscard(game, playerIdx) {
 
       if (indices.length >= 2 && !targets.kokushi) val += 50; // keep pairs
 
-      if (isIsolated(hand, tile)) {
-        if (tile.isHonor) val += 50000;
-        else if (tile.isTerminal) val += 30000;
-        else val += 10000;
+      // Yaku pair value (negative = want to keep)
+      if (indices.length >= 2 && tile.isHonor) {
+        if (tile.isSangen) val -= 300;
+        else if (tile.value === game.seatWind || tile.value === game.roundWind) val -= 200;
       }
 
-      val += discardPriority(tile) * 5000;
+      if (isIsolated(hand, tile)) {
+        if (tile.isHonor) val += 500;
+        else if (tile.isTerminal) val += 300;
+        else val += 100;
+      }
+
+      val += discardPriority(tile) * 5;
     }
 
     if (val > bestVal) {
@@ -530,6 +536,12 @@ function normalDiscard(game, playerIdx) {
       + (waits.length > 0 ? Math.min(waits.length, 9) * 10 : 0)
       + (indices.length >= 2 ? 50 : 0);
 
+    // Acceptance evaluation for non-tenpai
+    if (shanten > 0) {
+      const improve = countImprovingTiles(testHand, p.melds);
+      val += improve * 5;
+    }
+
     // Yaku-aware
     if (targets.tanyao && (tile.isTerminal || tile.isHonor)) val += 500;
     if (targets.honitsu) {
@@ -539,27 +551,34 @@ function normalDiscard(game, playerIdx) {
       if (tile.suit !== bestSuit && !tile.isHonor) val += 400;
     }
 
+    // Yaku pair value
+    if (indices.length >= 2 && tile.isHonor) {
+      if (tile.isSangen) val += 300;
+      else if (tile.value === game.seatWind || tile.value === game.roundWind) val += 200;
+    }
+
     const hasThreat = game.players.some(pl => pl.isRiichi || pl.melds.length > 0);
     if (hasThreat && AI_DIFFICULTY[p.difficulty].defenseLevel > 0) {
       const danger = tileDangerLevel(game, tile, false);
       val -= danger * AI_DIFFICULTY[p.difficulty].defenseLevel * 10;
     }
 
-    evals.push({ idx: indices[0], val, shanten, isolated, priority: discardPriority(tile) });
+    val += discardPriority(tile);
+
+    evals.push({ idx: indices[0], val, shanten, isolated });
   }
 
   evals.sort((a, b) =>
     a.shanten - b.shanten ||
     a.isolated - b.isolated ||
-    b.priority - a.priority ||
     b.val - a.val
   );
   const bestShanten = evals[0].shanten;
   const shantenCandidates = evals.filter(e => e.shanten === bestShanten);
   const bestIsolated = shantenCandidates[0].isolated;
   const isoCandidates = shantenCandidates.filter(e => e.isolated === bestIsolated);
-  const bestPriority = isoCandidates[0].priority;
-  const candidates = isoCandidates.filter(e => e.priority === bestPriority);
+  const bestVal = isoCandidates[0].val;
+  const candidates = isoCandidates.filter(e => e.val === bestVal);
   return candidates.length > 0
     ? candidates[Math.floor(Math.random() * candidates.length)].idx
     : evals[0].idx;
