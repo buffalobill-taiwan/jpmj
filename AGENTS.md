@@ -41,6 +41,9 @@ python3 -m http.server 8080     # 唯一需要的指令
 | 役種 split：`STANDALONE_YAKU` / `BONUS_YAKU` | yaku.js | 偶然役/ドラ為 bonus，不計入開牌判定 |
 | `findDecompositionsWithOpen` 不減去副露牌 | yaku.js | 手牌已不含副露牌，減去會誤扣第 4 張 |
 | 振聽判斷 | game.js `isFuriten` | 永久振聽（比對捨牌與待牌 key） |
+| **頭跳 (Atama-hane)** | game.js | 多人榮和時僅處理第一位（由 `aiDecisions[0]` 或 `humanCall` 優先級確保） |
+| **三家和了流局** | game.js | `wouldTriggerSanchaRon` 檢測，`handleSanchaRon` 執行流局 |
+| **沒有人和** | yaku.js | 不實作人和役種 |
 | 海底牌禁止吃碰槓 | game.js `buildAvailableCalls` | 以 `wall.isExhausted()` 阻擋 |
 | 立直棒跨局保留 | game.js `riichiSticks` | 流局無聽牌時保留至次局；有聽牌時分配 |
 | 流局詳細顯示 | main.js `showRoundResult` | 罰符、立直棒去向、連莊/輪莊、次局名稱 |
