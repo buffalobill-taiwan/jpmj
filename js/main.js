@@ -654,6 +654,9 @@ function setupControls() {
 
   b.passDraw = make('btn-pass-draw', 'スルー');
   b.passDraw.addEventListener('click', () => {
+    if (game.players[0].ippatsuRound >= 0) {
+      game.players[0].ippatsuRound = -1;
+    }
     game.availableActions = [];
     game.phase = 'discard';
     continueGame();

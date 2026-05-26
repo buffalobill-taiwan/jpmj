@@ -191,6 +191,10 @@ class Game {
         return false;
       }
 
+      if (p.ippatsuRound >= 0) {
+        p.ippatsuRound = -1;
+      }
+
       if (p.isRiichi) {
         const drawnIdx = p.hand.findIndex(t => t.equals(tile));
         this.executeDiscard(this.currentPlayer, drawnIdx);
@@ -297,12 +301,6 @@ class Game {
     }
 
     this.addLog(playerIdx, '打', detail);
-
-    for (let i = 0; i < 4; i++) {
-      if (this.players[i].ippatsuRound >= 0 && i !== playerIdx) {
-        this.players[i].ippatsuRound = -1;
-      }
-    }
 
     this.phase = 'call_pending';
     this.availableActions = [];
@@ -1106,7 +1104,7 @@ class Game {
       winTile,
       isRiichi: p.isRiichi,
       isDoubleRiichi: p.isRiichi && !this.firstRoundCallsMade && p.riichiTurn < 4,
-      isIppatsu: p.ippatsuRound >= 0 && (this.turnCount - p.ippatsuRound <= 1),
+      isIppatsu: p.ippatsuRound >= 0,
       isTenhou: this.turnCount === 0 && winType === 'tsumo' && playerIdx === this.dealerIndex,
       isChiihou: this.turnCount === 0 && winType === 'tsumo' && playerIdx !== this.dealerIndex,
       isRinshan: this.phase === 'rinshan',
