@@ -234,6 +234,7 @@ body.font-mono {
 #opponent-top .opponent-melds .tile-char.called {
   display: inline-block;
   transform: rotate(90deg);
+  margin: 0 5px;
 }
 #opponent-left .opponent-melds .tile-char.called {
   display: inline-block;
