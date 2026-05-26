@@ -725,7 +725,8 @@ function renderControls() {
       if (rc.length > 0) {
         b.riichi._candidates = rc;
         b.riichi.className = 'primary';
-        b.riichi.textContent = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : '立直';
+        const dblRiichi = !game.firstRoundCallsMade && game.turnCount < 4;
+        b.riichi.textContent = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : (dblRiichi ? 'ダブル立直' : '立直');
         b.riichi.disabled = false;
         b.riichi.hidden = false;
       }
@@ -770,7 +771,8 @@ function renderControls() {
       if (rc.length > 0) {
         b.riichi._candidates = rc;
         b.riichi.className = 'primary';
-        b.riichi.textContent = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : '立直';
+        const dblRiichi = !game.firstRoundCallsMade && game.turnCount < 4;
+        b.riichi.textContent = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : (dblRiichi ? 'ダブル立直' : '立直');
         b.riichi.disabled = false;
         b.riichi.hidden = false;
       }

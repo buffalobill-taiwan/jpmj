@@ -22,6 +22,7 @@ class Game {
     this.lastActionWasKan = false;
     this.discardAfterRiichi = null;
     this.firstRoundActive = false;
+    this.firstRoundCallsMade = false;
     this.firstDiscards = [];
     this.kanDeclarers = [];
     this.riichiDeclarers = [];
@@ -88,6 +89,7 @@ class Game {
     this.logGroup = 0;
     this.lastLogPlayer = -1;
     this.firstRoundActive = true;
+    this.firstRoundCallsMade = false;
     this.firstDiscards = [];
     this.kanDeclarers = [];
     this.riichiDeclarers = [];
@@ -451,6 +453,7 @@ class Game {
 
     if (type === 'pon') {
       this.firstRoundActive = false;
+      this.firstRoundCallsMade = true;
       this.firstDiscards = [];
       this.addLog(playerIdx, 'ポン', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
       let n = 2;
@@ -484,6 +487,7 @@ class Game {
 
     if (type === 'chi') {
       this.firstRoundActive = false;
+      this.firstRoundCallsMade = true;
       this.firstDiscards = [];
       this.addLog(playerIdx, 'チー', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
       const chiTileSet = call.chosenChiSet !== undefined ? call.chiSets[call.chosenChiSet] : call.chiSets[0];
@@ -526,6 +530,7 @@ class Game {
 
     if (type === 'kan' && call.isCalled) {
       this.firstRoundActive = false;
+      this.firstRoundCallsMade = true;
       this.firstDiscards = [];
       this.addLog(playerIdx, 'カン', tile.name);
       const removed = [];
@@ -1100,7 +1105,7 @@ class Game {
       winType,
       winTile,
       isRiichi: p.isRiichi,
-      isDoubleRiichi: p.isRiichi && p.riichiTurn === 0,
+      isDoubleRiichi: p.isRiichi && !this.firstRoundCallsMade && p.riichiTurn < 4,
       isIppatsu: p.ippatsuRound >= 0 && (this.turnCount - p.ippatsuRound <= 1),
       isTenhou: this.turnCount === 0 && winType === 'tsumo' && playerIdx === this.dealerIndex,
       isChiihou: this.turnCount === 0 && winType === 'tsumo' && playerIdx !== this.dealerIndex,
