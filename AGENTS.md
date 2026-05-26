@@ -13,9 +13,12 @@ python3 -m http.server 8080     # 唯一需要的指令
 ## Architecture
 
 - **Globals-based**: 無 import/export。所有檔案在 `index.html` 依序載入：
-  `tiles.js → wall.js → yaku.js → ai.js → game.js → main.js`
-- 共用 helper 皆為 global function：`getCounts`, `removeTiles`, `findTile`, `checkTenpai`, `estimateShanten`, `aiDecideTsumo` 等定義在 `yaku.js`/`ai.js`
-- 新增程式碼時要注意 global 命名碰撞
+  `tiles.js → wall.js → yaku.js → ai_base.js → ai_beginner.js → ai_normal.js → ai_expert.js → ai_factory.js → game.js → main.js`
+- **AI Strategy Pattern**: AI 邏輯類別化，每個 `Player` 擁有一個 `ai` 實例。
+  - `MahjongAI`: 基類，包含向聽數估算等通用 Helper。
+  - `BeginnerAI`, `NormalAI`, `ExpertAI`: 具體實作不同難度的決策。
+  - `AIFactory`: 用於建立實例。
+- 共用 helper 皆為 global function：`getCounts`, `removeTiles`, `findTile`, `checkTenpai` 等定義在 `yaku.js`。AI 專用工具函數定義在 `ai_base.js` 的類別方法中。
 
 ## Key Conventions
 
@@ -24,14 +27,14 @@ python3 -m http.server 8080     # 唯一需要的指令
 | `Tile.fromString("m1")` | tiles.js | `"m1"` → man-1, `"1z"` → honor-1 |
 | `tile.key()` → `"man5"` | tiles.js | 統一格式 |
 | `VARIANT_SELECTOR`（`'\uFE0E'` 或 `'\uFE0F'`） | tiles.js 宣告，main.js 使用 | 全域變數，`tile.char` 與所有牌背共用 |
-| 向聽數估算 | ai.js | 每花色 DP (`solveSuitDP`) + 字牌獨立處理 |
-| **役種意識 (Target Yaku)** | ai.js | `aiEvaluateTargets` 根據難度與手牌設定目標 (如 Tanyao, Honitsu, Kokushi)。高手在末盤有 **存活模式 (Survival)**。 |
-| **捨牌/鳴牌邏輯** | ai.js | 參考 `targets` 進行 yaku-aware 評分。存活模式下高手會完全放棄進攻，只打安全牌。 |
-| **託管模式** | main.js | 強制使用 `Normal` 強度邏輯 |
-| `tileDangerLevel(game, tile, useSuji)` | ai.js | 高手傳 `useSuji=true` |
-| 自動玩捨牌用 `normalDiscard` | ai.js | 非 `expertDiscard` |
-| 暗槓/加槓條件 | game.js | `shantenAfter <= shantenBefore` (AI 會主動進行) |
-| Pon/Chi 條件 | ai.js | `shantenAfter < shantenBefore` |
+| 向聽數估算 | ai_base.js | 每花色 DP (`solveSuitDP`) + 字牌獨立處理 |
+| **役種意識 (Target Yaku)** | ai_base.js | `evaluateTargets` 根據難度與手牌設定目標 (如 Tanyao, Honitsu, Kokushi)。高手在末盤有 **存活模式 (Survival)**。 |
+| **捨牌/鳴牌邏輯** | ai_*.js | 參考 `targets` 進行 yaku-aware 評分。存活模式下高手會完全放棄進攻，只打安全牌。 |
+| **託管模式** | main.js | 強制使用 `NormalAI` 邏輯 |
+| `tileDangerLevel(game, tile, useSuji)` | ai_base.js | 基類方法，高手傳 `useSuji=true` |
+| 自動玩捨牌用 `chooseDiscard` | ai_normal.js | 非專家模式捨牌 |
+| 暗槓/加槓條件 | game.js | `decideKan` 返回 true 時進行 |
+| Pon/Chi 條件 | ai_base.js/ai_*.js | 向聽數減少為基本前提 |
 | 鳴牌優先權 | game.js | `ron > kan > pon > chi` |
 | 王牌區 dead wall 起始 index 122，嶺上牌從 index 135 往下取 | wall.js | |
 | 寶牌最多 5 張，每槓 `addDoraIndicator()` | wall.js | |

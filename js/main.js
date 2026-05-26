@@ -1,5 +1,3 @@
-// ===== State Management =====
-
 const SCREEN = { TITLE:0, GAME:1, RESULT:2 };
 const TICK = 100;
 
@@ -758,16 +756,18 @@ function processAutoPlay() {
       if (game.handleAIKan(0)) return;
       const p = game.players[0];
       if (!p.isRiichi && p.melds.length === 0) {
-        for (let i = 0; i < p.hand.length; i++) {
-          const testHand = p.hand.filter((_, j) => j !== i);
-          if (checkTenpai(testHand, p.melds) && Math.random() < AI_DIFFICULTY.normal.riichiRate) {
-            selectedTile = -1;
-            game.humanRiichi(i);
-            return;
+        if (p.ai.decideRiichi(game, 0)) {
+          for (let i = 0; i < p.hand.length; i++) {
+            const testHand = p.hand.filter((_, j) => j !== i);
+            if (checkTenpai(testHand, p.melds)) {
+              selectedTile = -1;
+              game.humanRiichi(i);
+              return;
+            }
           }
         }
       }
-      const idx = normalDiscard(game, 0);
+      const idx = p.ai.chooseDiscard(game, 0);
       selectedTile = -1;
       game.humanDiscard(idx);
       return;
@@ -783,7 +783,8 @@ function processAutoPlay() {
       return;
     }
 
-    const chosenCall = aiDecideCall(game, humanCalls, 'normal');
+    const p = game.players[0];
+    const chosenCall = p.ai.decideCall(game, humanCalls);
     if (chosenCall) {
       game.humanCall(chosenCall);
     } else {

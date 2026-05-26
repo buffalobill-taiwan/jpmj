@@ -55,6 +55,7 @@ class Game {
         name: i === 0 ? 'あなた' : i === 1 ? 'CPU1' : i === 2 ? 'CPU2' : 'CPU3',
         isHuman: i === 0,
         difficulty: i === 0 ? 'normal' : this.options.difficulties[i - 1],
+        ai: AIFactory.create(i === 0 ? 'normal' : this.options.difficulties[i - 1]),
         hand: [],
         melds: [],
         discards: [],
@@ -129,7 +130,7 @@ class Game {
         this.availableActions = ['discard'];
         return true;
       }
-      const idx = aiChooseDiscard(this, this.currentPlayer);
+      const idx = this.players[this.currentPlayer].ai.chooseDiscard(this, this.currentPlayer);
       this.executeDiscard(this.currentPlayer, idx);
       return false;
     }
@@ -154,7 +155,7 @@ class Game {
           this.availableActions = ['tsumo', 'pass'];
           return true;
         }
-        if (aiDecideTsumo(this, this.currentPlayer)) {
+        if (this.players[this.currentPlayer].ai.decideTsumo(this, this.currentPlayer)) {
           this.executeWin(this.currentPlayer, 'tsumo', tile);
           return true;
         }
@@ -183,7 +184,7 @@ class Game {
         return false;
       }
       const p = this.players[this.currentPlayer];
-      if (!p.isRiichi && aiDecideRiichi(this, this.currentPlayer)) {
+      if (!p.isRiichi && p.ai.decideRiichi(this, this.currentPlayer)) {
         for (let i = 0; i < p.hand.length; i++) {
           const testHand = p.hand.filter((_, j) => j !== i);
           if (checkTenpai(testHand, p.melds)) {
@@ -192,7 +193,7 @@ class Game {
           }
         }
       }
-      const idx = aiChooseDiscard(this, this.currentPlayer);
+      const idx = this.players[this.currentPlayer].ai.chooseDiscard(this, this.currentPlayer);
       this.executeDiscard(this.currentPlayer, idx);
       return false;
     }
@@ -217,7 +218,7 @@ class Game {
           this.availableActions = ['tsumo', 'pass'];
           return true;
         }
-        if (aiDecideTsumo(this, this.currentPlayer)) {
+        if (this.players[this.currentPlayer].ai.decideTsumo(this, this.currentPlayer)) {
           this.executeWin(this.currentPlayer, 'tsumo', tile);
           return true;
         }
@@ -345,10 +346,18 @@ class Game {
     }
 
     const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
-    const chosenCall = aiDecideCall(this, aiCalls);
+    
+    // Each AI player decides on their own calls
+    const aiDecisions = aiCalls.map(c => {
+      const p = this.players[c.playerIdx];
+      return { call: p.ai.decideCall(this, [c]), priority: c.type };
+    }).filter(d => d.call !== null);
 
-    if (chosenCall) {
-      this.executeCall(chosenCall);
+    if (aiDecisions.length > 0) {
+      // Prioritize Ron > Kan > Pon > Chi
+      const pri = { ron:0, kan:1, pon:2, chi:3 };
+      aiDecisions.sort((a, b) => pri[a.call.type] - pri[b.call.type]);
+      this.executeCall(aiDecisions[0].call);
       if (this.phase === 'discard' && this.players[this.currentPlayer].isHuman) return true;
       if (this.phase === 'rinshan' && this.players[this.currentPlayer].isHuman) return true;
       return false;
@@ -370,9 +379,15 @@ class Game {
       if (hadRon) this.players[0].isTempFuriten = true;
       this.availableCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
       const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
-      const chosenCall = aiDecideCall(this, aiCalls);
-      if (chosenCall) {
-        this.executeCall(chosenCall);
+      const aiDecisions = aiCalls.map(c => {
+        const p = this.players[c.playerIdx];
+        return { call: p.ai.decideCall(this, [c]), priority: c.type };
+      }).filter(d => d.call !== null);
+
+      if (aiDecisions.length > 0) {
+        const pri = { ron:0, kan:1, pon:2, chi:3 };
+        aiDecisions.sort((a, b) => pri[a.call.type] - pri[b.call.type]);
+        this.executeCall(aiDecisions[0].call);
       } else {
         this.advanceTurn();
       }
@@ -417,7 +432,7 @@ class Game {
         this.availableActions = ['discard'];
         return;
       }
-      const idx = aiChooseDiscard(this, playerIdx);
+      const idx = this.players[playerIdx].ai.chooseDiscard(this, playerIdx);
       this.executeDiscard(playerIdx, idx);
       return;
     }
@@ -457,7 +472,7 @@ class Game {
         this.availableActions = ['discard'];
         return;
       }
-      const idx = aiChooseDiscard(this, playerIdx);
+      const idx = this.players[playerIdx].ai.chooseDiscard(this, playerIdx);
       this.executeDiscard(playerIdx, idx);
       return;
     }
@@ -635,7 +650,7 @@ class Game {
     const counts = getCounts(p.hand);
 
     for (const [k, c] of Object.entries(counts)) {
-      if (c === 4 && aiDecideKan(this, playerIdx)) {
+      if (c === 4 && p.ai.decideKan(this, playerIdx)) {
         const tile = p.hand.find(t => t.key() === k);
         const newHand = [];
         let n = 4;
@@ -659,9 +674,9 @@ class Game {
         if ((counts[ponKey] || 0) >= 1) {
           const tile = p.hand.find(t => t.key() === ponKey);
           if (tile) {
-            const shantenBefore = estimateShanten(p.hand, p.melds);
+            const shantenBefore = p.ai.estimateShanten(p.hand, p.melds);
             const handAfter = removeTiles(p.hand, ponKey, 1);
-            const shantenAfter = estimateShanten(handAfter, p.melds);
+            const shantenAfter = p.ai.estimateShanten(handAfter, p.melds);
             if (shantenAfter <= shantenBefore) {
               const newHand = [];
               let removed = false;
