@@ -585,55 +585,6 @@ class Game {
     return kans;
   }
 
-  humanKan(tileIdx) {
-    const p = this.players[this.currentPlayer];
-    if (!p.isHuman) return;
-    if (p.isRiichi) return;
-    if (this.phase !== 'discard') return;
-    const tile = p.hand[tileIdx];
-    const handCounts = getCounts(p.hand);
-
-    // 暗槓
-    if ((handCounts[tile.key()] || 0) >= 4) {
-      const newHand = [];
-      let n = 4;
-      for (const t of p.hand) {
-        if (n > 0 && t.key() === tile.key()) { n--; }
-        else { newHand.push(t); }
-      }
-      p.hand = newHand;
-      p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
-      this.lastActionWasKan = true;
-      this.wall.addDoraIndicator();
-      this.availableActions = [];
-      this.phase = 'rinshan';
-      this.addLog(this.currentPlayer, '暗槓', tile.name);
-      return;
-    }
-
-    // 加槓
-    for (const m of p.melds) {
-      if (m.type === 'triplet' && m.tiles[0].key() === tile.key() && !m.isKan) {
-        const newHand = [];
-        let removed = false;
-        for (const t of p.hand) {
-          if (!removed && t.key() === tile.key()) { removed = true; }
-          else { newHand.push(t); }
-        }
-        p.hand = newHand;
-        m.type = 'kan';
-        m.tiles.push(tile);
-        m.isKan = true;
-        m.open = true;
-        this.wall.addDoraIndicator();
-        this.availableActions = [];
-        this.phase = 'rinshan';
-        this.addLog(this.currentPlayer, '加槓', tile.name);
-        return;
-      }
-    }
-  }
-
   executeKan(kanOption) {
     const p = this.players[this.currentPlayer];
     const tile = kanOption.tile;

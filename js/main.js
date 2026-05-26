@@ -619,9 +619,15 @@ function setupControls() {
 
   b.kakan = make('btn-kakan', '加槓', 'primary');
   b.kakan.addEventListener('click', () => {
-    game.humanKan(selectedTile);
-    selectedTile = -1;
-    continueGame();
+    const kans = game.buildAvailableKans();
+    if (kans.length > 1) {
+      selectedTile = -1;
+      showKanModal(kans);
+    } else if (kans.length === 1) {
+      game.executeKan(kans[0]);
+      selectedTile = -1;
+      continueGame();
+    }
   });
 
   b.discard = make('btn-discard', '切る');
@@ -724,16 +730,12 @@ function renderControls() {
       const key = p.hand[selectedTile].key();
 
       if (!p.isRiichi) {
-        if ((counts[key] || 0) >= 4) {
+        let canAnkan = (counts[key] || 0) >= 4;
+        let canKakan = p.melds.some(m => m.type === 'triplet' && !m.isKan && m.tiles[0].key() === key);
+        if (canAnkan || canKakan) {
           b.kan._mode = 'hand';
           b.kan.textContent = 'カン';
           b.kan.hidden = false;
-        }
-        for (const m of p.melds) {
-          if (m.type === 'triplet' && !m.isKan && m.tiles[0].key() === key) {
-            b.kakan.hidden = false;
-            break;
-          }
         }
       }
 
