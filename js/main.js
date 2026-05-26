@@ -763,6 +763,7 @@ function renderControls() {
     if (selectedTile >= 0) {
       const counts = getCounts(p.hand);
       const key = p.hand[selectedTile].key();
+      const tile = p.hand[selectedTile];
 
       if (!p.isRiichi) {
         let canAnkan = (counts[key] || 0) >= 4;
@@ -774,6 +775,7 @@ function renderControls() {
         }
       }
 
+      b.discard.textContent = game.wouldTriggerSuufonRendai(tile) ? '切る(流局)' : '切る';
       b.discard.hidden = false;
     }
   } else if (game.availableActions) {
@@ -967,7 +969,15 @@ function showRoundResult() {
   const overlay = document.getElementById('round-result');
   const content = overlay.querySelector('#round-result-content');
 
-  if (game.roundResult.winType === 'kyuushu_kyuuhai') {
+  if (game.roundResult.winType === 'suufon_rendai') {
+    const r = game.roundResult;
+    content.innerHTML = `
+      <h3>四風連打 流局</h3>
+      <div class="detail">四家第一打皆為同一風牌</div>
+      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
+      <button id="next-round-btn">次局へ</button>
+    `;
+  } else if (game.roundResult.winType === 'kyuushu_kyuuhai') {
     const r = game.roundResult;
     const declarer = game.players[r.declarer].name;
     content.innerHTML = `

@@ -21,6 +21,8 @@ class Game {
     this.lastActionWasRiichi = false;
     this.lastActionWasKan = false;
     this.discardAfterRiichi = null;
+    this.firstRoundActive = false;
+    this.firstDiscards = [];
     this.log = [];
     this.logGroup = 0;
     this.lastLogPlayer = -1;
@@ -80,6 +82,8 @@ class Game {
   startNewRound() {
     this.logGroup = 0;
     this.lastLogPlayer = -1;
+    this.firstRoundActive = true;
+    this.firstDiscards = [];
     const wind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
     const label = `${wind}${(this.roundNumber % 4) + 1}局`;
     this.addSystemLog('開始', label);
@@ -271,6 +275,8 @@ class Game {
     this.riichiDeclaredThisTurn = false;
     this.lastActionWasKan = false;
 
+    if (this.firstRoundActive) this.firstDiscards.push(tile);
+
     let detail = tile.name;
     if (isRiichi) {
       detail += '（立直）';
@@ -427,6 +433,8 @@ class Game {
     }
 
     if (type === 'pon') {
+      this.firstRoundActive = false;
+      this.firstDiscards = [];
       this.addLog(playerIdx, 'ポン', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
       let n = 2;
       const newHand = [];
@@ -458,6 +466,8 @@ class Game {
     }
 
     if (type === 'chi') {
+      this.firstRoundActive = false;
+      this.firstDiscards = [];
       this.addLog(playerIdx, 'チー', tile.name + ' ← ' + this.players[this.lastDiscardPlayer].name);
       const chiTileSet = call.chosenChiSet !== undefined ? call.chiSets[call.chosenChiSet] : call.chiSets[0];
       const meldTiles = chiTileSet.slice();
@@ -498,6 +508,8 @@ class Game {
     }
 
     if (type === 'kan' && call.isCalled) {
+      this.firstRoundActive = false;
+      this.firstDiscards = [];
       this.addLog(playerIdx, 'カン', tile.name);
       const removed = [];
       let n = 3;
@@ -542,6 +554,15 @@ class Game {
   }
 
   advanceTurn() {
+    if (this.firstRoundActive && this.firstDiscards.length === 4) {
+      const first = this.firstDiscards[0];
+      if (first.isWind && this.firstDiscards.every(t => t.key() === first.key())) {
+        this.handleSuufonRendai();
+        return;
+      }
+    }
+    this.firstRoundActive = false;
+    this.firstDiscards = [];
     this.addLog(this.currentPlayer, '→', this.players[(this.currentPlayer + 1) % 4].name);
     this.lastDiscard = null;
     this.lastDiscardPlayer = -1;
@@ -835,6 +856,34 @@ class Game {
     }
   }
 
+  wouldTriggerSuufonRendai(tile) {
+    if (!this.firstRoundActive) return false;
+    if (this.firstDiscards.length !== 3) return false;
+    if (!tile || !tile.isWind) return false;
+    const first = this.firstDiscards[0];
+    return first.isWind && this.firstDiscards.every(t => t.key() === first.key()) && tile.key() === first.key();
+  }
+
+  handleSuufonRendai() {
+    this.addSystemLog('流局', '四風連打');
+    for (const p of this.players) {
+      p.isRiichi = false;
+      p.riichiTurn = -1;
+    }
+    const nextWind = ['東', '南', '西', '北'][Math.floor(this.roundNumber / 4) % 4];
+    const nextRoundLabel = `${nextWind}${(this.roundNumber % 4) + 1}局`;
+    this.roundResult = {
+      winner: -1,
+      winType: 'suufon_rendai',
+      honba: this.honba,
+      riichiSticks: this.riichiSticks,
+      isRenchan: true,
+      nextRoundLabel,
+    };
+    this.roundOver = true;
+    this.phase = 'round_end';
+  }
+
   handleKyuushuKyuuhai(playerIdx) {
     this.addSystemLog('流局', '九種九牌 by ' + this.players[playerIdx].name);
     for (const p of this.players) {
@@ -957,7 +1006,7 @@ class Game {
   }
 
   endRound() {
-    if (this.roundResult.winType === 'kyuushu_kyuuhai') {
+    if (this.roundResult.winType === 'kyuushu_kyuuhai' || this.roundResult.winType === 'suufon_rendai') {
       this.honba++;
     } else if (this.roundResult.winner === -1) {
       const dealerTenpai = this.players[this.dealerIndex].isTenpai;
