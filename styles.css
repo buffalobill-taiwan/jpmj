@@ -31,7 +31,6 @@
 
 html, body {
   width:100%; height:100%;
-  min-width:960px; min-height:720px;
   overflow:hidden;
   font-family: 'Riichi-Mahjong','Noto Sans JP','Noto Sans TC','Microsoft JhengHei','PingFang TC',sans-serif;
   background: var(--table-dark);
@@ -46,7 +45,6 @@ body.font-mono {
 
 #title-screen {
   position:fixed; inset:0;
-  min-width:960px; min-height:720px;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   background: linear-gradient(135deg, var(--table-dark), var(--table-green));
   z-index:100;
@@ -137,7 +135,6 @@ body.font-mono {
 
 #game-screen {
   position:fixed; inset:0;
-  min-width:960px; min-height:720px;
   display:none;
   background: radial-gradient(ellipse at center, var(--table-green), var(--table-dark));
 }
@@ -198,7 +195,7 @@ body.font-mono {
 }
 
 #opponent-top .tiles-row {
-  gap: 2px;
+  gap: clamp(1px, 0.3vw, 3px);
 }
 #opponent-top {
   top: 2%;
@@ -219,7 +216,7 @@ body.font-mono {
 }
 
 .opponent-melds {
-  display:flex; gap:4px;
+  display:flex; gap:clamp(2px, 0.4vw, 5px);
 }
 
 .opponent-melds .meld-group {
@@ -411,7 +408,7 @@ body.font-mono {
 
 #dora-area {
   margin-top:6px;
-  display:flex; gap:3px; justify-content:center;
+  display:flex; gap:clamp(2px, 0.3vw, 4px); justify-content:center;
 }
 
 #dora-area .tile-char {
@@ -441,7 +438,7 @@ body.font-mono {
   align-items: center;
   width: 100%;
   padding-bottom: 0.5em;
-  padding-right: 200px;
+  padding-right: clamp(0px, 10vw, 200px);
   background: linear-gradient(transparent, rgba(0,0,0,0.3));
 }
 
@@ -452,7 +449,8 @@ body.font-mono {
   bottom: 6px;
   display: flex;
   flex-direction: column;
-  width: 180px;
+  width: max(140px, 16vw);
+  max-width: 180px;
   max-height: 200px;
   background: rgba(0,0,0,0.55);
   border: 1px solid rgba(255,255,255,0.1);
@@ -541,14 +539,14 @@ body.font-mono {
 }
 
 #player-melds {
-  display:flex; gap:6px; margin-bottom:4px;
+  display:flex; gap:clamp(3px, 0.6vw, 8px); margin-bottom:4px;
 }
 
 #player-melds .meld-group {
-  display:flex; gap:2px;
+  display:flex; gap:clamp(1px, 0.3vw, 3px);
   border:1px solid var(--tile-border);
   border-radius:4px;
-  padding:2px 4px;
+  padding:clamp(1px, 0.2vw, 3px) clamp(2px, 0.4vw, 5px);
   background: rgba(245,240,224,0.15);
 }
 
@@ -559,7 +557,7 @@ body.font-mono {
 #player-hand {
   display:flex;
   justify-content:center;
-  gap: 2px;
+  gap: clamp(1px, 0.3vw, 3px);
   padding: 4px 0;
 }
 
@@ -571,7 +569,7 @@ body.font-mono {
 }
 
 #player-hand .tile-slot:hover {
-  transform: translateY(-6px);
+  transform: translateY(clamp(-4px, -0.6vw, -8px));
   z-index:10;
 }
 
@@ -581,7 +579,7 @@ body.font-mono {
   border-radius: 4px;
   background: var(--tile-back);
   color: var(--text-dark);
-  padding: 2px 4px;
+  padding: clamp(1px, 0.2vw, 3px) clamp(2px, 0.4vw, 5px);
   box-shadow: 0 2px 4px var(--shadow);
   line-height: 1.1;
   transition: box-shadow 0.15s;
@@ -654,7 +652,7 @@ body.font-mono {
   grid-template-columns: repeat(12, 2.6em);
   grid-auto-rows: 2.6em;
   gap: 0;
-  margin-bottom: 12px;
+  margin-bottom: clamp(6px, 1vw, 14px);
   width: max-content;
   height: auto;
   align-content: start;
@@ -674,8 +672,8 @@ body.font-mono {
 /* Controls */
 #controls {
   position: fixed;
-  right: 38%;
-  bottom: 7rem;
+  right: clamp(15%, 38%, 40%);
+  bottom: clamp(6rem, 12vh, 8rem);
   display: flex;
   gap: 6px;
   z-index: 20;
@@ -974,4 +972,11 @@ button.auto-btn:hover { background: #5577aa; }
   #controls button { padding: 0.3em 0.7em; font-size: clamp(0.65rem, 2vw, 0.8rem); }
   .opponent-area .tile-char { font-size: clamp(1.1rem, 3.5vw, 1.5rem); }
   #result-content { min-width: 260px; padding: 1.5em; }
+  #round-result-content { min-width: 260px; }
+  #chi-modal-content, #riichi-modal-content { min-width: 240px; }
+}
+
+@media (max-width: 420px) {
+  #result-content, #round-result-content { min-width: 90vw; padding: 1em; }
+  #chi-modal-content, #riichi-modal-content { min-width: 85vw; }
 }
