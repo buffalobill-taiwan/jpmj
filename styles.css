@@ -54,13 +54,11 @@ body.font-mono {
   font-size: clamp(2.5rem, 6vw, 5rem);
   color: var(--gold);
   text-shadow: 2px 2px 8px var(--shadow);
-  margin-bottom: 0.3em;
   letter-spacing: 0.15em;
 }
 
 .title-tiles {
   font-size: clamp(1.5rem, 3vw, 3rem);
-  margin-bottom: 1.5em;
   opacity: 0.7;
   letter-spacing: 0.3em;
 }
@@ -113,7 +111,7 @@ body.font-mono {
 }
 
 #start-btn {
-  margin-top: 1.5em;
+  margin-top: 0.5em;
   padding: 0.7em 2.5em;
   font-size: clamp(1rem, 1.5vw, 1.3rem);
   border: none;
