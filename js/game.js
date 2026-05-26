@@ -7,6 +7,14 @@ class Game {
     this.honba = 0;
     this.riichiSticks = 0;
     this.dealerIndex = 0;
+    if (this.options.startingSeat) {
+      if (this.options.startingSeat === 'random') {
+        this.dealerIndex = Math.floor(Math.random() * 4);
+      } else {
+        const seatMap = { east: 0, south: 3, west: 2, north: 1 };
+        this.dealerIndex = seatMap[this.options.startingSeat] || 0;
+      }
+    }
     this.currentPlayer = 0;
     this.lastDiscard = null;
     this.lastDiscardPlayer = -1;
@@ -81,6 +89,12 @@ class Game {
     this.honba = 0;
     this.riichiSticks = 0;
     this.dealerIndex = 0;
+    if (this.options.startingSeat && this.options.startingSeat !== 'random') {
+      const seatMap = { east: 0, south: 3, west: 2, north: 1 };
+      this.dealerIndex = seatMap[this.options.startingSeat] || 0;
+    } else if (this.options.startingSeat === 'random') {
+      this.dealerIndex = Math.floor(Math.random() * 4);
+    }
     this.gameOver = false;
     this.startNewRound();
   }
@@ -707,6 +721,28 @@ class Game {
       m.isKan = true;
       m.open = true;
       this.addLog(this.currentPlayer, '加槓', tile.name);
+
+      // 搶槓：加槓後檢查其他三家能否和
+      this.lastDiscardPlayer = this.currentPlayer;
+      const chankanCalls = [];
+      for (let ci = 1; ci <= 3; ci++) {
+        const pIdx = (this.currentPlayer + ci) % 4;
+        const other = this.players[pIdx];
+        const gs = this.getGameState(pIdx, tile, 'ron');
+        const result = evaluateHand(other.hand, other.melds, tile, 'ron', gs);
+        if (result && !this.isFuriten(pIdx)) {
+          chankanCalls.push({ type: 'ron', playerIdx: pIdx, tile });
+        }
+      }
+      if (chankanCalls.length > 0) {
+        this.lastActionWasKan = true;
+        this.sanchaRonCandidates = chankanCalls.map(c => c.playerIdx);
+        this.sanchaRonPending = this.sanchaRonCandidates.length >= 3;
+        this.availableCalls = chankanCalls;
+        this.availableActions = [];
+        this.phase = 'call_pending';
+        return;
+      }
     }
 
     this.lastActionWasKan = true;
@@ -781,6 +817,28 @@ class Game {
                 return true;
               }
               this.addLog(playerIdx, '加槓', tile.name);
+
+              // 搶槓檢查
+              this.lastDiscardPlayer = playerIdx;
+              const chankanCalls = [];
+              for (let ci = 1; ci <= 3; ci++) {
+                const pIdx = (playerIdx + ci) % 4;
+                const other = this.players[pIdx];
+                const gs = this.getGameState(pIdx, tile, 'ron');
+                const result = evaluateHand(other.hand, other.melds, tile, 'ron', gs);
+                if (result && !this.isFuriten(pIdx)) {
+                  chankanCalls.push({ type: 'ron', playerIdx: pIdx, tile });
+                }
+              }
+              if (chankanCalls.length > 0) {
+                this.sanchaRonCandidates = chankanCalls.map(c => c.playerIdx);
+                this.sanchaRonPending = this.sanchaRonCandidates.length >= 3;
+                this.availableCalls = chankanCalls;
+                this.availableActions = [];
+                this.phase = 'call_pending';
+                return true;
+              }
+
               this.availableActions = [];
               this.phase = 'rinshan';
               return true;

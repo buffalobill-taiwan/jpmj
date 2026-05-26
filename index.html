@@ -56,6 +56,24 @@
   </div>
 
   <div class="option-group">
+    <label>起始座位</label>
+    <div class="option-row">
+      <button class="option-btn seat-btn selected" data-value="random">隨機</button>
+      <button class="option-btn seat-btn" data-value="east">東</button>
+      <button class="option-btn seat-btn" data-value="south">南</button>
+      <button class="option-btn seat-btn" data-value="west">西</button>
+      <button class="option-btn seat-btn" data-value="north">北</button>
+    </div>
+    <div style="display:none">
+      <input type="radio" name="seat" id="seat-random" value="random" checked>
+      <input type="radio" name="seat" id="seat-east" value="east">
+      <input type="radio" name="seat" id="seat-south" value="south">
+      <input type="radio" name="seat" id="seat-west" value="west">
+      <input type="radio" name="seat" id="seat-north" value="north">
+    </div>
+  </div>
+
+  <div class="option-group">
     <label>牌面風格</label>
     <div class="option-row">
       <button class="option-btn font-btn" data-value="colorful">彩色</button>

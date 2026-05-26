@@ -11,6 +11,7 @@ const TITLE_TILE_CODEPOINTS = [0x1F000,0x1F001,0x1F002,0x1F003,0x1F004,0x1F005,0
 let setup = {
   length: 'east',
   difficulties: ['normal','normal','normal'],
+  startingSeat: 'random',
 };
 
 // ===== Initialization =====
@@ -44,6 +45,16 @@ function init() {
         });
       }
     } catch(e) {}
+  }
+
+  const savedSeat = localStorage.getItem('setupStartingSeat');
+  if (savedSeat && ['random','east','south','west','north'].includes(savedSeat)) {
+    setup.startingSeat = savedSeat;
+    document.querySelectorAll('.seat-btn').forEach(b => b.classList.remove('selected'));
+    const btn = document.querySelector(`.seat-btn[data-value="${savedSeat}"]`);
+    if (btn) btn.classList.add('selected');
+    const radio = document.getElementById(`seat-${savedSeat}`);
+    if (radio) radio.checked = true;
   }
 
   renderTitleTiles();
@@ -148,6 +159,27 @@ function bindTitleEvents() {
     });
   });
 
+  document.querySelectorAll('input[name="seat"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.seat-btn').forEach(b => b.classList.remove('selected'));
+      const btn = document.querySelector(`.seat-btn[data-value="${radio.value}"]`);
+      if (btn) btn.classList.add('selected');
+      setup.startingSeat = radio.value;
+      localStorage.setItem('setupStartingSeat', setup.startingSeat);
+    });
+  });
+
+  document.querySelectorAll('.seat-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.seat-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      const radio = document.getElementById(`seat-${btn.dataset.value}`);
+      if (radio) radio.checked = true;
+      setup.startingSeat = btn.dataset.value;
+      localStorage.setItem('setupStartingSeat', setup.startingSeat);
+    });
+  });
+
   document.querySelectorAll('.font-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.font-btn').forEach(b => b.classList.remove('selected'));
@@ -169,6 +201,7 @@ function startGame() {
   game = new Game({
     length: setup.length,
     difficulties: [...setup.difficulties],
+    startingSeat: setup.startingSeat,
   });
   game.initGame();
   currentScreen = SCREEN.GAME;
