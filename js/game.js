@@ -743,6 +743,28 @@ class Game {
       p.hand = newHand;
       p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
       this.addLog(this.currentPlayer, '暗槓', tile.name);
+
+      // 國士無雙搶暗槓：暗槓後檢查其他三家是否為國士無雙聽該張牌
+      this.lastDiscardPlayer = this.currentPlayer;
+      const chankanCalls = [];
+      for (let ci = 1; ci <= 3; ci++) {
+        const pIdx = (this.currentPlayer + ci) % 4;
+        const other = this.players[pIdx];
+        const gs = this.getGameState(pIdx, tile, 'ron');
+        const result = evaluateHand(other.hand, other.melds, tile, 'ron', gs);
+        if (result && !this.isFuriten(pIdx) && result.yaku.some(y => y.name === '国士無双')) {
+          chankanCalls.push({ type: 'ron', playerIdx: pIdx, tile });
+        }
+      }
+      if (chankanCalls.length > 0) {
+        this.lastActionWasKan = true;
+        this.sanchaRonCandidates = chankanCalls.map(c => c.playerIdx);
+        this.sanchaRonPending = this.sanchaRonCandidates.length >= 3;
+        this.availableCalls = chankanCalls;
+        this.availableActions = [];
+        this.phase = 'call_pending';
+        return;
+      }
     } else if (kanOption.type === 'kakan') {
       // 加槓
       const meldIndex = kanOption.meldIndex;
@@ -818,6 +840,30 @@ class Game {
         }
         p.hand = newHand;
         p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
+        this.addLog(playerIdx, '暗槓', tile.name);
+
+        // 國士無雙搶暗槓檢查
+        this.lastDiscardPlayer = playerIdx;
+        const chankanCalls = [];
+        for (let ci = 1; ci <= 3; ci++) {
+          const oIdx = (playerIdx + ci) % 4;
+          const other = this.players[oIdx];
+          const gs = this.getGameState(oIdx, tile, 'ron');
+          const result = evaluateHand(other.hand, other.melds, tile, 'ron', gs);
+          if (result && !this.isFuriten(oIdx) && result.yaku.some(y => y.name === '国士無双')) {
+            chankanCalls.push({ type: 'ron', playerIdx: oIdx, tile });
+          }
+        }
+        if (chankanCalls.length > 0) {
+          this.lastActionWasKan = true;
+          this.sanchaRonCandidates = chankanCalls.map(c => c.playerIdx);
+          this.sanchaRonPending = this.sanchaRonCandidates.length >= 3;
+          this.availableCalls = chankanCalls;
+          this.availableActions = [];
+          this.phase = 'call_pending';
+          return true;
+        }
+
         this.wall.addDoraIndicator();
         for (let i = 0; i < 4; i++) {
           this.players[i].ippatsuRound = -1;
@@ -827,7 +873,6 @@ class Game {
           this.handleSuukantsuAbort();
           return true;
         }
-        this.addLog(playerIdx, '暗槓', tile.name);
         this.availableActions = [];
         this.phase = 'rinshan';
         return true;
