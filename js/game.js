@@ -388,68 +388,107 @@ class Game {
   }
 
   processCallPhase() {
-    const humanCalls = this.availableCalls.filter(c => this.players[c.playerIdx].isHuman);
+    const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
+    const aiDecisions = aiCalls.map(c => {
+      const p = this.players[c.playerIdx];
+      return { playerIdx: c.playerIdx, call: p.ai.decideCall(this, [c]) };
+    }).filter(d => d.call !== null);
 
+    const humanCalls = this.availableCalls.filter(c => this.players[c.playerIdx].isHuman);
     if (humanCalls.length > 0) {
+      this.pendingAiDecisions = aiDecisions; // Store AI decisions while waiting for human
       this.availableActions = humanCalls;
       this.availableActions.push({ type: 'pass' });
       return true;
     }
 
-    const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
-    
-    // Each AI player decides on their own calls
-    const aiDecisions = aiCalls.map(c => {
-      const p = this.players[c.playerIdx];
-      return { call: p.ai.decideCall(this, [c]), priority: c.type };
-    }).filter(d => d.call !== null);
-
-    if (aiDecisions.length > 0) {
-      // Prioritize Ron > Kan > Pon > Chi
-      const pri = { ron:0, kan:1, pon:2, chi:3 };
-      aiDecisions.sort((a, b) => pri[a.call.type] - pri[b.call.type]);
-      this.executeCall(aiDecisions[0].call);
-      if (this.phase === 'discard' && this.players[this.currentPlayer].isHuman) return true;
-      if (this.phase === 'rinshan' && this.players[this.currentPlayer].isHuman) return true;
-      return false;
-    }
-
-    for (const c of aiCalls) {
-      if (c.type === 'ron') {
-        this.players[c.playerIdx].isTempFuriten = true;
-      }
-    }
-
-    this.advanceTurn();
+    // No human calls, resolve immediately
+    this.resolveCalls(aiDecisions);
     return false;
   }
 
   humanCall(callChoice) {
-    if (callChoice.type === 'pass') {
-      const hadRon = this.availableCalls.some(c => c.playerIdx === 0 && c.type === 'ron');
+    const decisions = this.pendingAiDecisions || [];
+    if (callChoice.type !== 'pass') {
+      decisions.push({ playerIdx: 0, call: callChoice });
+    } else {
+      // Check if human passed on Ron for furiten
+      const hadRon = this.availableCalls.some(c => c.playerIdx === 0 && (c.type === 'ron' || c.type === 'ron-no-yaku' || c.type === 'ron-furiten'));
       if (hadRon) this.players[0].isTempFuriten = true;
-      this.availableCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
-      const aiCalls = this.availableCalls.filter(c => !this.players[c.playerIdx].isHuman);
-      const aiDecisions = aiCalls.map(c => {
-        const p = this.players[c.playerIdx];
-        return { call: p.ai.decideCall(this, [c]), priority: c.type };
-      }).filter(d => d.call !== null);
+    }
+    this.pendingAiDecisions = null;
+    this.resolveCalls(decisions);
+  }
 
-      if (aiDecisions.length > 0) {
-        const pri = { ron:0, kan:1, pon:2, chi:3 };
-        aiDecisions.sort((a, b) => pri[a.call.type] - pri[b.call.type]);
-        this.executeCall(aiDecisions[0].call);
-      } else {
-        this.advanceTurn();
+  resolveCalls(decisions) {
+    // 1. Separate Ron vs Others
+    const rons = decisions.filter(d => d.call.type === 'ron');
+    const others = decisions.filter(d => d.call.type !== 'ron');
+
+    // 2. Handle Ron Priority
+    if (rons.length > 0) {
+      // Apply Temp Furiten to those who could Ron but didn't
+      const ronEligibleIdxs = this.availableCalls.filter(c => c.type === 'ron').map(c => c.playerIdx);
+      for (const idx of ronEligibleIdxs) {
+        if (!rons.some(r => r.playerIdx === idx)) {
+          this.players[idx].isTempFuriten = true;
+        }
       }
+
+      // Handle Sancha-ron (Triple Ron)
+      if (rons.length >= 3) {
+        this.handleSanchaRon();
+        return;
+      }
+
+      // Sort by seat order from discarder (Head-Bump)
+      rons.sort((a, b) => {
+        const distA = (a.playerIdx - this.lastDiscardPlayer + 4) % 4;
+        const distB = (b.playerIdx - this.lastDiscardPlayer + 4) % 4;
+        return distA - distB;
+      });
+
+      // Log interception if someone was bumped
+      if (rons.length > 1) {
+        for (let i = 1; i < rons.length; i++) {
+          this.addSystemLog('頭跳', `${this.players[rons[i].playerIdx].name}和了無效`);
+        }
+      }
+
+      // Log interception if someone's meld was bumped by Ron
+      for (const d of others) {
+        this.addSystemLog('榮和優先', `${this.players[d.playerIdx].name}鳴牌無效`);
+      }
+
+      this.executeCall(rons[0].call);
       return;
     }
 
-    if (callChoice.type === 'ron' && this.wouldTriggerSanchaRon(callChoice.playerIdx)) {
-      this.handleSanchaRon();
+    // 3. Handle Meld Priority (Kan/Pon > Chi)
+    if (others.length > 0) {
+      const pri = { kan: 0, pon: 0, chi: 1 };
+      others.sort((a, b) => (pri[a.call.type] ?? 99) - (pri[b.call.type] ?? 99));
+      
+      const best = others[0];
+      // Log interception if Chi was bumped by Pon/Kan
+      if (best.call.type !== 'chi') {
+        for (let i = 1; i < others.length; i++) {
+          if (others[i].call.type === 'chi') {
+            this.addSystemLog('鳴牌優先', `${this.players[others[i].playerIdx].name}鳴牌無效`);
+          }
+        }
+      }
+
+      this.executeCall(best.call);
       return;
     }
-    this.executeCall(callChoice);
+
+    // 4. No one called, advance turn
+    const ronEligibleIdxs = this.availableCalls.filter(c => c.type === 'ron').map(c => c.playerIdx);
+    for (const idx of ronEligibleIdxs) {
+      this.players[idx].isTempFuriten = true;
+    }
+    this.advanceTurn();
   }
 
   executeCall(call) {
