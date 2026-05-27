@@ -52,12 +52,8 @@ class Game {
     return Math.floor(this.roundNumber / 4);
   }
 
-  get roundWindName() {
-    return ['東','南','西','北'][this.roundWind];
-  }
-
   get roundLabel() {
-    let label = this.roundWindName + ((this.roundNumber % 4) + 1) + '局';
+    let label = ['東','南','西','北'][Math.floor(this.roundNumber / 4)] + ((this.roundNumber % 4) + 1) + '局';
     if (this.roundNumber === this.maxRounds - 1) label += ' All Last';
     return label;
   }
@@ -1182,12 +1178,6 @@ class Game {
     if (this.roundNumber >= this.maxRounds) {
       this.gameOver = true;
       return true;
-    }
-    for (const p of this.players) {
-      if (p.score <= 0) {
-        this.gameOver = true;
-        return true;
-      }
     }
     return false;
   }

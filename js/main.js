@@ -313,7 +313,7 @@ function updateTileChars(container, tiles, count, posFn) {
 
 function renderCenterInfo() {
   const ci = document.getElementById('center-info');
-  let rLabel = `${game.roundLabel} ${game.roundWindName}風`;
+  let rLabel = game.roundLabel;
   const extras = [];
   if (game.honba > 0) extras.push(`連莊 本場${game.honba}`);
   if (game.riichiSticks > 0) extras.push(`立直${game.riichiSticks}`);
