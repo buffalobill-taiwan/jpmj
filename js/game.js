@@ -45,7 +45,7 @@ class Game {
 
   get maxRounds() {
     return this.options.length === 'east' ? 4
-         : this.options.length === 'half' ? 8 : 12;
+         : this.options.length === 'half' ? 8 : 16;
   }
 
   get roundWind() {
@@ -57,7 +57,9 @@ class Game {
   }
 
   get roundLabel() {
-    return this.roundWindName + ((this.roundNumber % 4) + 1) + '局';
+    let label = this.roundWindName + ((this.roundNumber % 4) + 1) + '局';
+    if (this.roundNumber === this.maxRounds - 1) label += ' All Last';
+    return label;
   }
 
   get doraIndicators() {
