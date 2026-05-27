@@ -672,19 +672,6 @@ function setupControls() {
     }
   });
 
-  b.kakan = make('btn-kakan', '加槓', 'primary');
-  b.kakan.addEventListener('click', () => {
-    const kans = game.buildAvailableKans();
-    if (kans.length > 1) {
-      selectedTile = -1;
-      showKanModal(kans);
-    } else if (kans.length === 1) {
-      game.executeKan(kans[0]);
-      selectedTile = -1;
-      continueGame();
-    }
-  });
-
   b.discard = make('btn-discard', '切る');
   b.discard.addEventListener('click', () => {
     if (selectedTile >= 0) {
