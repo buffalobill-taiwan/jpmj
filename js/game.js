@@ -1016,6 +1016,10 @@ class Game {
       nextRoundLabel,
     };
 
+    if (p.isRiichi) {
+      const uraTiles = this.wall.getUraDoraIndicators();
+      this.addSystemLog('裏ドラ', uraTiles.map(t => t.name).join(' '));
+    }
     this.applyScore(playerIdx, result.payments);
     this.addSystemLog('和牌', p.name);
     this.roundOver = true;
