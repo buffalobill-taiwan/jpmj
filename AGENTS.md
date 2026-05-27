@@ -95,6 +95,7 @@ dealer_first_discard → draw → discard → call_pending → advanceTurn → d
 | 滿貫以上 yaku 列表 | main.js `showRoundResult` | 僅列役種名稱，不顯示飜數、不含「合計 X飜 Y符」 |
 | 點數支付明細 | main.js `showRoundResult` | ツモ/ロン皆顯示每位玩家的 +/- 分數變動 |
 | 無役/振聽提示 | main.js `renderControls`, game.js `buildAvailableCalls` | ロン按鈕改為 disabled 灰鈕並標註「ロン(無役)」/「ロン(振聽)」 |
+| 點數不足提示 | main.js `renderControls` | 立直按鈕改為 disabled 灰鈕並標註「立直(無点)」 |
 | 聽牌提示 | main.js `renderPlayerArea` | 僅顯示「聽」/「聽（振聽）」，不再逐牌檢查有役 |
 
 ## CSS

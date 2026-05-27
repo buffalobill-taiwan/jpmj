@@ -236,7 +236,7 @@ class Game {
         return false;
       }
       const p = this.players[this.currentPlayer];
-      if (!p.isRiichi && p.ai.decideRiichi(this, this.currentPlayer)) {
+      if (!p.isRiichi && p.score >= 1000 && this.wall.getRemainingCount() >= 4 && p.ai.decideRiichi(this, this.currentPlayer)) {
         for (let i = 0; i < p.hand.length; i++) {
           const testHand = p.hand.filter((_, j) => j !== i);
           if (checkTenpai(testHand, p.melds)) {
@@ -662,6 +662,7 @@ class Game {
     const p = this.players[this.currentPlayer];
     if (p.isRiichi) return;
     if (p.melds.length > 0) return;
+    if (p.score < 1000) return;
     if (this.wall.getRemainingCount() < 4) return;
 
     if (!p.hand.some((_, i) => {

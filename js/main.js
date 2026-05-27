@@ -764,10 +764,19 @@ function renderControls() {
       }
       if (rc.length > 0) {
         b.riichi._candidates = rc;
-        b.riichi.className = 'primary';
+        const canAfford = p.score >= 1000;
         const dblRiichi = !game.firstRoundCallsMade && game.turnCount < 4;
-        b.riichi.textContent = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : (dblRiichi ? 'ダブル立直' : '立直');
-        b.riichi.disabled = false;
+        const label = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : (dblRiichi ? 'ダブル立直' : '立直');
+
+        if (!canAfford) {
+          b.riichi.textContent = '立直(無点)';
+          b.riichi.className = 'disabled';
+          b.riichi.disabled = true;
+        } else {
+          b.riichi.textContent = label;
+          b.riichi.className = 'primary';
+          b.riichi.disabled = false;
+        }
         b.riichi.hidden = false;
       }
     }

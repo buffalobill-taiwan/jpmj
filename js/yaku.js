@@ -291,7 +291,9 @@ function checkPinfu(handInfo, gameState) {
   }
   const pair = handInfo.pair;
   if (!pair) return [];
-  if (pair.isWind || pair.isSangen) {
+  
+  if (pair.isSangen) return []; // Dragons can never be Pinfu pair
+  if (pair.isWind) {
     if (gameState) {
       if (pair.value === (gameState.seatWind || 0)) return [];
       if (pair.value === (gameState.roundWind || 0)) return [];
@@ -299,6 +301,7 @@ function checkPinfu(handInfo, gameState) {
       return [];
     }
   }
+
   const waitType = detectWaitTypeSimple(handInfo.hand, melds, pair, gameState ? gameState.winTile : null);
   if (waitType !== 'ryanmen') return [];
   return [{ name:'平和', han:1 }];
