@@ -4,3 +4,5 @@ node_modules/
 .codegraph/
 opencode.jsonc
 fonts/*.otf
+.gemini/
+GEMINI.md

@@ -1026,6 +1026,8 @@ function showRoundResult() {
 
   const overlay = document.getElementById('round-result');
   const content = overlay.querySelector('#round-result-content');
+  const r = game.roundResult;
+  const wouldEnd = !r.isRenchan && game.roundNumber + 1 >= game.maxRounds;
 
   if (game.roundResult.winType === 'suufon_rendai') {
     const r = game.roundResult;
@@ -1100,8 +1102,8 @@ function showRoundResult() {
       ${paymentLines.map(l => `<div class="detail">${l}</div>`).join('')}
       ${riichiStr}
       ${honbaStr}
-      <div class="detail">${renchanStr} → ${r.nextRoundLabel}</div>
-      <button id="next-round-btn">次局へ</button>
+      <div class="detail">${renchanStr} → ${wouldEnd ? '遊戲結束' : r.nextRoundLabel}</div>
+      <button id="next-round-btn">${wouldEnd ? '結果を見る' : '次局へ'}</button>
     `;
   } else {
     const winner = game.players[game.roundResult.winner];
@@ -1149,7 +1151,7 @@ function showRoundResult() {
       <div class="yaku-list">${yakuStr}</div>
       ${paymentLines.map(l => `<div class="detail">${l}</div>`).join('')}
       ${extraDetails.length > 0 ? `<div class="detail">${extraDetails.join(' ')}</div>` : ''}
-      <button id="next-round-btn">次局へ</button>
+      <button id="next-round-btn">${wouldEnd ? '結果を見る' : '次局へ'}</button>
     `;
   }
 
@@ -1158,7 +1160,7 @@ function showRoundResult() {
   document.getElementById('next-round-btn').addEventListener('click', () => {
     overlay.style.display = 'none';
 
-    if (game.checkGameOver()) {
+    if (wouldEnd || game.checkGameOver()) {
       showFinalResult();
     } else {
       game.endRound();
