@@ -782,7 +782,11 @@ class Game {
       }
     }
 
+    // Kan is successful (not robbed or it was an Ankan)
     this.lastActionWasKan = true;
+    for (let i = 0; i < 4; i++) {
+      this.players[i].ippatsuRound = -1;
+    }
     this.wall.addDoraIndicator();
     this.kanDeclarers.push(this.currentPlayer);
     if (this.kanDeclarers.length >= 4 && new Set(this.kanDeclarers).size > 1) {
@@ -814,6 +818,9 @@ class Game {
         p.hand = newHand;
         p.melds.push({ type:'kan', tiles:[tile, tile, tile, tile], open:false });
         this.wall.addDoraIndicator();
+        for (let i = 0; i < 4; i++) {
+          this.players[i].ippatsuRound = -1;
+        }
         this.kanDeclarers.push(playerIdx);
         if (this.kanDeclarers.length >= 4 && new Set(this.kanDeclarers).size > 1) {
           this.handleSuukantsuAbort();
@@ -876,6 +883,9 @@ class Game {
                 return true;
               }
 
+              for (let i = 0; i < 4; i++) {
+                this.players[i].ippatsuRound = -1;
+              }
               this.availableActions = [];
               this.phase = 'rinshan';
               return true;
