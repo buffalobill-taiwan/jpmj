@@ -366,9 +366,15 @@ function checkYakuhai(handInfo, gameState) {
     if (t.isSangen) {
       yaku.push({ name: t.name + ' (役牌)', han:1 });
     } else if (t.isWind) {
-      if (t.value === (gameState ? gameState.seatWind : 0) ||
-          t.value === (gameState ? gameState.roundWind : 0)) {
-        yaku.push({ name: t.name + ' (役牌)', han:1 });
+      let isSeat = false, isRound = false;
+      if (gameState && t.value === gameState.seatWind) isSeat = true;
+      if (gameState && t.value === gameState.roundWind) isRound = true;
+      if (isSeat && isRound) {
+        yaku.push({ name: t.name + '風' + t.name, han: 2 });
+      } else if (isSeat) {
+        yaku.push({ name: t.name + '(自風)', han: 1 });
+      } else if (isRound) {
+        yaku.push({ name: t.name + '(門風)', han: 1 });
       }
     }
   }
@@ -749,7 +755,7 @@ function filterContainedYaku(yaku) {
     if (names.has('清老頭') && y.name === '対々和') return false;
     if ((names.has('大三元') || names.has('小三元')) && /^(中|發|白) \(役牌\)$/.test(y.name)) return false;
     if (names.has('大四喜') && y.name === '対々和') return false;
-    if ((names.has('大四喜') || names.has('小四喜')) && /^(東|南|西|北) \(役牌\)$/.test(y.name)) return false;
+    if ((names.has('大四喜') || names.has('小四喜')) && /^(東|南|西|北)(\(自風\)|\(門風\)|風(東|南|西|北))$/.test(y.name)) return false;
     return true;
   });
 }
