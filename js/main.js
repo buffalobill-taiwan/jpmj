@@ -12,6 +12,7 @@ let setup = {
   length: 'east',
   difficulties: ['normal','normal','normal'],
   startingSeat: 'random',
+  autoPlayDifficulty: 'normal',
 };
 
 // ===== Initialization =====
@@ -45,6 +46,13 @@ function init() {
         });
       }
     } catch(e) {}
+  }
+
+  const savedAutoDiff = localStorage.getItem('setupAutoPlayDifficulty');
+  if (savedAutoDiff && ['beginner','normal','expert'].includes(savedAutoDiff)) {
+    setup.autoPlayDifficulty = savedAutoDiff;
+    const sel = document.querySelector('select[data-auto-play]');
+    if (sel) sel.value = savedAutoDiff;
   }
 
   const savedSeat = localStorage.getItem('setupStartingSeat');
@@ -192,6 +200,14 @@ function bindTitleEvents() {
     });
   });
 
+  const autoPlaySelect = document.querySelector('select[data-auto-play]');
+  if (autoPlaySelect) {
+    autoPlaySelect.addEventListener('change', () => {
+      setup.autoPlayDifficulty = autoPlaySelect.value;
+      localStorage.setItem('setupAutoPlayDifficulty', setup.autoPlayDifficulty);
+    });
+  }
+
   document.getElementById('start-btn').addEventListener('click', startGame);
 }
 
@@ -202,6 +218,7 @@ function startGame() {
     length: setup.length,
     difficulties: [...setup.difficulties],
     startingSeat: setup.startingSeat,
+    autoPlayDifficulty: setup.autoPlayDifficulty,
   });
   game.initGame();
   currentScreen = SCREEN.GAME;

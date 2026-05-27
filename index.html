@@ -29,7 +29,7 @@
   </div>
 
   <div class="option-group">
-    <label>對手強度</label>
+    <label>AI強度</label>
     <div class="option-row">
       <div><span style="font-size:0.8em">CPU1</span><br>
         <select class="difficulty-select" data-player="0">
@@ -47,6 +47,13 @@
       </div>
       <div><span style="font-size:0.8em">CPU3</span><br>
         <select class="difficulty-select" data-player="2">
+          <option value="expert">高手</option>
+          <option value="normal" selected>一般人</option>
+          <option value="beginner">初學者</option>
+        </select>
+      </div>
+      <div><span style="font-size:0.8em">託管</span><br>
+        <select class="difficulty-select" data-auto-play>
           <option value="expert">高手</option>
           <option value="normal" selected>一般人</option>
           <option value="beginner">初學者</option>

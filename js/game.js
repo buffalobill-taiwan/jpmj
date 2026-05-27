@@ -70,8 +70,8 @@ class Game {
       this.players.push({
         name: i === 0 ? 'あなた' : i === 1 ? 'CPU1' : i === 2 ? 'CPU2' : 'CPU3',
         isHuman: i === 0,
-        difficulty: i === 0 ? 'normal' : this.options.difficulties[i - 1],
-        ai: AIFactory.create(i === 0 ? 'normal' : this.options.difficulties[i - 1]),
+        difficulty: i === 0 ? this.options.autoPlayDifficulty || 'normal' : this.options.difficulties[i - 1],
+        ai: AIFactory.create(i === 0 ? this.options.autoPlayDifficulty || 'normal' : this.options.difficulties[i - 1]),
         hand: [],
         melds: [],
         discards: [],
