@@ -49,7 +49,7 @@ function init() {
   }
 
   const savedAutoDiff = localStorage.getItem('setupAutoPlayDifficulty');
-  if (savedAutoDiff && ['beginner','normal','expert'].includes(savedAutoDiff)) {
+  if (savedAutoDiff && ['beginner','normal','expert','kokushi'].includes(savedAutoDiff)) {
     setup.autoPlayDifficulty = savedAutoDiff;
     const sel = document.querySelector('select[data-auto-play]');
     if (sel) sel.value = savedAutoDiff;

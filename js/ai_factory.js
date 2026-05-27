@@ -8,6 +8,8 @@ const AIFactory = {
         return new ExpertAI();
       case 'beginner':
         return new BeginnerAI();
+      case 'kokushi':
+        return new KokushiAI();
       case 'normal':
       default:
         return new NormalAI();
