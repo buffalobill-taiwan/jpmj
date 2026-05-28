@@ -25,6 +25,8 @@ function init() {
     b.classList.toggle('selected', b.dataset.value === savedFont);
   });
 
+  populateDifficultySelects();
+
   const savedLength = localStorage.getItem('setupLength');
   if (savedLength && ['east','half','full'].includes(savedLength)) {
     setup.length = savedLength;
@@ -41,7 +43,7 @@ function init() {
       const diffs = JSON.parse(savedDiffs);
       if (Array.isArray(diffs) && diffs.length === 3) {
         setup.difficulties = diffs;
-        document.querySelectorAll('.difficulty-select').forEach(sel => {
+        document.querySelectorAll('.difficulty-select[data-player]').forEach(sel => {
           sel.value = diffs[parseInt(sel.dataset.player)];
         });
       }
@@ -49,7 +51,7 @@ function init() {
   }
 
   const savedAutoDiff = localStorage.getItem('setupAutoPlayDifficulty');
-  if (savedAutoDiff && ['beginner','normal','expert','kokushi'].includes(savedAutoDiff)) {
+  if (savedAutoDiff && AI_TYPES.some(a => a.id === savedAutoDiff)) {
     setup.autoPlayDifficulty = savedAutoDiff;
     const sel = document.querySelector('select[data-auto-play]');
     if (sel) sel.value = savedAutoDiff;
@@ -71,6 +73,19 @@ function init() {
   setupLogDrag();
   setupAutoBtn();
   setupControls();
+}
+
+function populateDifficultySelects() {
+  document.querySelectorAll('.difficulty-select').forEach(sel => {
+    sel.innerHTML = '';
+    AI_TYPES.forEach(ai => {
+      const opt = document.createElement('option');
+      opt.value = ai.id;
+      opt.textContent = ai.label;
+      if (ai.id === 'normal') opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
 }
 
 function renderTitleTiles() {
@@ -159,7 +174,7 @@ function bindTitleEvents() {
     });
   });
 
-  document.querySelectorAll('.difficulty-select').forEach(sel => {
+  document.querySelectorAll('.difficulty-select[data-player]').forEach(sel => {
     sel.addEventListener('change', () => {
       const idx = parseInt(sel.dataset.player);
       setup.difficulties[idx] = sel.value;
