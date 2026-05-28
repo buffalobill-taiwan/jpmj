@@ -371,7 +371,7 @@ function renderPlayerArea() {
   const p = game.players[0];
 
   const pNameEl = document.querySelector('#player-info .player-name');
-  pNameEl.textContent = `${p.name} (${['東','南','西','北'][p.seatWind-1]})`;
+  pNameEl.textContent = `${p.name}${game.dealerIndex === 0 ? '🏠' : ''} (${['東','南','西','北'][p.seatWind-1]})`;
   pNameEl.classList.toggle('riichi-active', p.isRiichi);
   document.querySelector('#player-info .player-score').textContent = `${p.score}点`;
 
@@ -507,7 +507,7 @@ function renderOpponent(areaId, playerIdx, reveal) {
   if (!p) return;
 
   const oNameEl = area.querySelector('.player-name');
-  oNameEl.textContent = `${p.name} (${['東','南','西','北'][p.seatWind-1]})`;
+  oNameEl.textContent = `${p.name}${game.dealerIndex === playerIdx ? '🏠' : ''} (${['東','南','西','北'][p.seatWind-1]})`;
   oNameEl.classList.toggle('riichi-active', p.isRiichi);
   area.querySelector('.player-score').textContent = `${p.score}点`;
 
