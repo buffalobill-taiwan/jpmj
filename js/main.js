@@ -1148,14 +1148,10 @@ function buildWinResult(r, wouldEnd) {
 
   if (r.payments.type === 'tsumo') {
     const basePoints = r.payments.total;
-    const breakdownParts = ['基礎' + basePoints.toLocaleString()];
-    if (honbaBonus > 0) breakdownParts.push('本場' + honbaBonus);
-    if (riichiBonus > 0) breakdownParts.push('立直' + riichiBonus);
     const totalPoints = basePoints + honbaBonus + riichiBonus;
 
     html += '<div class="section score-section">';
     html += '<div class="score-big">' + totalPoints.toLocaleString() + '点</div>';
-    html += '<div class="score-breakdown">（' + breakdownParts.join(' + ') + '）</div>';
     if (rankLabel) html += '<div class="rank-label">' + rankLabel + '</div>';
     html += '</div>';
 
@@ -1180,14 +1176,10 @@ function buildWinResult(r, wouldEnd) {
     html += '</div></div>';
   } else {
     const basePoints = r.payments.discarderPayment;
-    const breakdownParts = ['基礎' + basePoints.toLocaleString()];
-    if (honbaBonus > 0) breakdownParts.push('本場' + honbaBonus);
-    if (riichiBonus > 0) breakdownParts.push('立直' + riichiBonus);
     const totalPoints = basePoints + honbaBonus + riichiBonus;
 
     html += '<div class="section score-section">';
     html += '<div class="score-big">' + totalPoints.toLocaleString() + '点</div>';
-    html += '<div class="score-breakdown">（' + breakdownParts.join(' + ') + '）</div>';
     if (rankLabel) html += '<div class="rank-label">' + rankLabel + '</div>';
     html += '</div>';
 
