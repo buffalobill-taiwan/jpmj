@@ -808,19 +808,27 @@ button.auto-btn:hover { background: #5577aa; }
   font-size: clamp(0.75rem, 1vw, 0.85rem);
   opacity:0.8;
 }
-#round-result-content .yaku-table {
-  width: 100%;
-  border-collapse: collapse;
+#round-result-content .yaku-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+  justify-content: center;
 }
-#round-result-content .yaku-table td {
-  padding: 0.1em 0.3em;
+#round-result-content .yaku-item {
+  display: inline-block;
+  padding: 0.1em 0.45em;
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  font-size: clamp(0.75rem, 1vw, 0.85rem);
+  line-height: 1.5;
 }
-#round-result-content .yaku-table td:last-child {
-  text-align: right;
-}
-#round-result-content .yaku-total td {
+#round-result-content .yaku-total-line {
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.12);
+  margin-top: 0.3em;
+  padding-top: 0.15em;
   font-weight: bold;
-  border-top: 1px solid rgba(255,255,255,0.2);
+  font-size: clamp(0.75rem, 1vw, 0.85rem);
 }
 
 #round-result-content .score-big {

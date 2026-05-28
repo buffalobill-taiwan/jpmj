@@ -1146,17 +1146,17 @@ function buildWinResult(r, wouldEnd) {
   let html = '<div class="result-header"><h3>' + dealerLabel + winner.name + ' ' + (r.winType === 'tsumo' ? 'ツモ' : 'ロン') + '！</h3>' + badgeHtml + '</div>';
 
   const rankLabel = getRankLabel(r.totalHan, r.fu, r.isYakuman, r.yaku);
-  let yakuRows = '';
-  for (let i = 0; i < r.yaku.length; i++) {
-    const y = r.yaku[i];
-    const hanStr = y.isYakuman ? '役滿' : y.han + '飜';
-    yakuRows += '<tr><td>' + y.name + '</td><td>' + hanStr + '</td></tr>';
+  let yakuItems = '';
+  const sortedYaku = [...r.yaku].sort((a, b) => b.han - a.han);
+  for (let i = 0; i < sortedYaku.length; i++) {
+    yakuItems += '<span class="yaku-item">' + sortedYaku[i].name + '</span>';
   }
-  if (r.doraHan > 0) yakuRows += '<tr><td>ドラ</td><td>' + r.doraHan + '飜</td></tr>';
-  if (r.uraDoraHan > 0) yakuRows += '<tr><td>裏ドラ</td><td>' + r.uraDoraHan + '飜</td></tr>';
-  if (r.totalHan > 0) yakuRows += '<tr class="yaku-total"><td>合計</td><td>' + (rankLabel || (r.totalHan + '飜 ' + r.fu + '符')) + '</td></tr>';
+  if (r.doraHan > 0) yakuItems += '<span class="yaku-item">ドラ×' + r.doraHan + '</span>';
+  if (r.uraDoraHan > 0) yakuItems += '<span class="yaku-item">裏ドラ×' + r.uraDoraHan + '</span>';
 
-  html += '<div class="section"><div class="section-title">役種</div><table class="yaku-table">' + yakuRows + '</table></div>';
+  html += '<div class="section"><div class="section-title">役種</div><div class="yaku-grid">' + yakuItems + '</div>';
+  if (r.totalHan > 0) html += '<div class="yaku-total-line">合計 ' + (rankLabel || (r.totalHan + '飜 ' + r.fu + '符')) + '</div>';
+  html += '</div>';
 
   const honbaBonus = r.honba * 300;
   const riichiBonus = r.riichiSticks * 1000;
