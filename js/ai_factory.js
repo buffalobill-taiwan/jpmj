@@ -7,6 +7,7 @@ const AI_TYPES = [
   { id: 'expert', label: '高手' },
   { id: 'kokushi', label: '国士命' },
   { id: 'tanyao', label: '断么厨' },
+  { id: 'menzen', label: '門清俠' },
 ];
 
 const AIFactory = {
@@ -20,6 +21,8 @@ const AIFactory = {
         return new KokushiAI();
       case 'tanyao':
         return new TanyaoAI();
+      case 'menzen':
+        return new MenzenAI();
       case 'normal':
       default:
         return new NormalAI();
