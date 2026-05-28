@@ -370,11 +370,6 @@ function renderMeldTiles(group, meld, reveal) {
 function renderPlayerArea() {
   const p = game.players[0];
 
-  if (selectedTile === -1 && p.lastDraw) {
-    const drawnIdx = p.hand.findIndex(t => t === p.lastDraw);
-    if (drawnIdx >= 0) selectedTile = drawnIdx;
-  }
-
   const pNameEl = document.querySelector('#player-info .player-name');
   pNameEl.textContent = `${p.name}${game.dealerIndex === 0 ? '🏠' : ''} (${['東','南','西','北'][p.seatWind-1]})`;
   pNameEl.classList.toggle('riichi-active', p.isRiichi);
@@ -401,6 +396,7 @@ function renderPlayerArea() {
     handDiv.innerHTML = '';
     const drawnTile = p.lastDraw;
     const drawnInHand = drawnTile ? p.hand.findIndex(t => t === drawnTile) : -1;
+    const isMyDiscard = (game.phase === 'dealer_first_discard' || game.phase === 'discard') && game.currentPlayer === 0;
 
     for (let i = 0; i < p.hand.length; i++) {
       if (i === drawnInHand) continue;
@@ -416,7 +412,7 @@ function renderPlayerArea() {
       label.className = 'tile-label';
       label.textContent = t.name;
       slot.appendChild(label);
-      slot.addEventListener('click', () => onTileClick(i));
+      if (isMyDiscard) slot.addEventListener('click', () => onTileClick(i));
       handDiv.appendChild(slot);
     }
 
@@ -437,7 +433,7 @@ function renderPlayerArea() {
       label.className = 'tile-label';
       label.textContent = t.name;
       slot.appendChild(label);
-      slot.addEventListener('click', () => onTileClick(drawnInHand));
+      if (isMyDiscard) slot.addEventListener('click', () => onTileClick(drawnInHand));
       handDiv.appendChild(slot);
     } else {
       const slot = document.createElement('div');
@@ -998,16 +994,15 @@ function showRiichiModal(candidates) {
 }
 
 function onTileClick(idx) {
-  const p = game.players[0];
+  if (!(game.phase === 'dealer_first_discard' || game.phase === 'discard')) return;
+  if (game.currentPlayer !== 0) return;
 
-  if (game.phase === 'dealer_first_discard' || game.phase === 'discard') {
-    if (selectedTile === idx) {
-      selectedTile = -1;
-    } else {
-      selectedTile = idx;
-    }
-    renderGame();
+  if (selectedTile === idx) {
+    selectedTile = -1;
+  } else {
+    selectedTile = idx;
   }
+  renderGame();
 }
 
 // ===== Round Result =====
