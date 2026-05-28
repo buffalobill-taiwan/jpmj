@@ -47,8 +47,6 @@ class MenzenAI extends MahjongAI {
   decideRiichi(game, playerIdx) {
     const p = game.players[playerIdx];
     if (p.score < 1000) return false;
-    const waits = getWaitingTiles(p.hand, p.melds);
-    if (waits.length === 0) return false;
     return Math.random() < 0.85;
   }
 
