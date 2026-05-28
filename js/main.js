@@ -370,6 +370,11 @@ function renderMeldTiles(group, meld, reveal) {
 function renderPlayerArea() {
   const p = game.players[0];
 
+  if (selectedTile === -1 && p.lastDraw) {
+    const drawnIdx = p.hand.findIndex(t => t === p.lastDraw);
+    if (drawnIdx >= 0) selectedTile = drawnIdx;
+  }
+
   const pNameEl = document.querySelector('#player-info .player-name');
   pNameEl.textContent = `${p.name}${game.dealerIndex === 0 ? '🏠' : ''} (${['東','南','西','北'][p.seatWind-1]})`;
   pNameEl.classList.toggle('riichi-active', p.isRiichi);
