@@ -732,29 +732,6 @@ button.auto-btn:hover { background: #5577aa; }
   text-shadow: 0 2px 4px var(--shadow);
 }
 
-.rank-list {
-  list-style:none;
-  text-align:left;
-  margin-bottom: 1.5em;
-}
-
-.rank-list li {
-  display:flex; justify-content:space-between;
-  padding: 0.5em 0.8em;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
-}
-
-.rank-list li:first-child {
-  color: var(--gold);
-  font-weight:bold;
-  font-size: clamp(1rem, 1.5vw, 1.2rem);
-}
-
-.rank-list li .rank { margin-right:1em; opacity:0.8; }
-.rank-list li .name { flex:1; }
-.rank-list li .score { font-weight:bold; }
-
 #stats-area { margin-bottom: 1.5em; }
 
 .result-stats-table {
@@ -774,10 +751,16 @@ button.auto-btn:hover { background: #5577aa; }
 .result-stats-table td {
   padding: 0.3em 0.5em;
   border-bottom: 1px solid rgba(255,255,255,0.06);
+  text-align: center;
 }
 
-.result-stats-table td:first-child { text-align: left; }
-.result-stats-table td:not(:first-child) { text-align: center; }
+.result-stats-table td:nth-child(2) { text-align: left; }
+.result-stats-table td:nth-child(3) { font-weight: bold; }
+.result-stats-table .rank-first td {
+  color: var(--gold);
+  font-weight: bold;
+  font-size: clamp(0.85rem, 1.2vw, 1rem);
+}
 
 .result-summary {
   font-size: clamp(0.75rem, 1vw, 0.85rem);
