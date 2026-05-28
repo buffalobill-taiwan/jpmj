@@ -382,7 +382,7 @@ function renderMeldTiles(group, meld, reveal) {
   }
 }
 
-function renderPlayerArea() {
+function renderPlayerArea(mergeLastDraw) {
   const p = game.players[0];
 
   const pNameEl = document.querySelector('#player-info .player-name');
@@ -392,7 +392,7 @@ function renderPlayerArea() {
 
   const sig = p.hand.map(t => t.key()).join(',') + '|' +
               p.melds.map(m => m.tiles.map(t => t.key()).join('.')).join(',') + '|' +
-              selectedTile;
+              selectedTile + '|' + (mergeLastDraw ? '1' : '0');
 
   const meldsDiv = document.getElementById('player-melds');
   const handDiv = document.getElementById('player-hand');
@@ -409,12 +409,12 @@ function renderPlayerArea() {
     }
 
     handDiv.innerHTML = '';
-    const drawnTile = p.lastDraw;
+    const drawnTile = mergeLastDraw ? null : p.lastDraw;
     const drawnInHand = drawnTile ? p.hand.findIndex(t => t === drawnTile) : -1;
-    const isMyDiscard = (game.phase === 'dealer_first_discard' || game.phase === 'discard') && game.currentPlayer === 0;
+    const isMyDiscard = !mergeLastDraw && (game.phase === 'dealer_first_discard' || game.phase === 'discard') && game.currentPlayer === 0;
 
     for (let i = 0; i < p.hand.length; i++) {
-      if (i === drawnInHand) continue;
+      if (!mergeLastDraw && i === drawnInHand) continue;
       const t = p.hand[i];
       const slot = document.createElement('div');
       slot.className = 'tile-slot';
@@ -430,6 +430,8 @@ function renderPlayerArea() {
       if (isMyDiscard) slot.addEventListener('click', () => onTileClick(i));
       handDiv.appendChild(slot);
     }
+
+    if (mergeLastDraw) return;
 
     const gap = document.createElement('div');
     gap.className = 'tile-gap';
@@ -1008,6 +1010,7 @@ function showRoundResult() {
   renderOpponent('opponent-right', 1, true);
   renderOpponent('opponent-top', 2, true);
   renderOpponent('opponent-left', 3, true);
+  renderPlayerArea(true);
 
   const overlay = document.getElementById('round-result');
   const content = overlay.querySelector('#round-result-content');
