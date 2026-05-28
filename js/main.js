@@ -1260,6 +1260,15 @@ function showFinalResult() {
     list.appendChild(li);
   }
 
+  const statsArea = document.getElementById('stats-area');
+  let statsHtml = '<table class="result-stats-table"><thead><tr><th>名前</th><th>ツモ</th><th>ロン</th><th>放銃</th></tr></thead><tbody>';
+  for (const s of scores) {
+    statsHtml += `<tr><td>${s.name}</td><td>${s.tsumo}</td><td>${s.ron}</td><td>${s.dealtIn}</td></tr>`;
+  }
+  statsHtml += '</tbody></table>';
+  statsHtml += `<div class="result-summary">總局數 ${game.roundCount} ／ 流局 ${game.ryuukyokuCount}</div>`;
+  statsArea.innerHTML = statsHtml;
+
   document.getElementById('back-btn').addEventListener('click', () => {
     rs.style.display = 'none';
     game = null;

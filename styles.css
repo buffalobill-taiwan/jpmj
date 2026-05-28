@@ -755,6 +755,36 @@ button.auto-btn:hover { background: #5577aa; }
 .rank-list li .name { flex:1; }
 .rank-list li .score { font-weight:bold; }
 
+#stats-area { margin-bottom: 1.5em; }
+
+.result-stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.6em;
+  font-size: clamp(0.8rem, 1.1vw, 0.95rem);
+}
+
+.result-stats-table th {
+  color: var(--gold);
+  opacity: 0.8;
+  padding: 0.3em 0.5em;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.result-stats-table td {
+  padding: 0.3em 0.5em;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.result-stats-table td:first-child { text-align: left; }
+.result-stats-table td:not(:first-child) { text-align: center; }
+
+.result-summary {
+  font-size: clamp(0.75rem, 1vw, 0.85rem);
+  opacity: 0.7;
+  text-align: center;
+}
+
 #back-btn {
   padding: 0.6em 2em;
   font-size: clamp(0.9rem, 1.2vw, 1.1rem);

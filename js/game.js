@@ -37,6 +37,8 @@ class Game {
     this.suuchaRiichiPending = false;
     this.sanchaRonCandidates = [];
     this.sanchaRonPending = false;
+    this.roundCount = 0;
+    this.ryuukyokuCount = 0;
     this.log = [];
     this.logGroup = 0;
     this.lastLogPlayer = -1;
@@ -81,6 +83,7 @@ class Game {
         ippatsuRound: -1,
         lastDraw: null,
         isTempFuriten: false,
+        stats: { tsumo: 0, ron: 0, dealtIn: 0 },
       });
     }
     this.roundNumber = 0;
@@ -1026,6 +1029,12 @@ class Game {
       this.addSystemLog('裏ドラ', uraTiles.map(t => t.name).join(' '));
     }
     this.applyScore(playerIdx, result.payments);
+    if (winType === 'tsumo') {
+      this.players[playerIdx].stats.tsumo++;
+    } else {
+      this.players[playerIdx].stats.ron++;
+      this.players[this.lastDiscardPlayer].stats.dealtIn++;
+    }
     this.addSystemLog('和牌', p.name);
     this.roundOver = true;
     this.phase = 'round_end';
@@ -1287,6 +1296,8 @@ class Game {
   }
 
   endRound() {
+    this.roundCount++;
+    if (this.roundResult.winner === -1) this.ryuukyokuCount++;
     if (this.roundResult.winType === 'kyuushu_kyuuhai' || this.roundResult.winType === 'suufon_rendai' || this.roundResult.winType === 'suukantsu_abort' || this.roundResult.winType === 'suucha_riichi' || this.roundResult.winType === 'sancha_ron') {
       this.honba++;
     } else if (this.roundResult.winner === -1) {
@@ -1322,6 +1333,9 @@ class Game {
       name: p.name,
       score: p.score,
       isHuman: p.isHuman,
+      tsumo: p.stats.tsumo,
+      ron: p.stats.ron,
+      dealtIn: p.stats.dealtIn,
     }));
     scores.sort((a, b) => b.score - a.score);
     scores.forEach((s, i) => { s.rank = i + 1; });
