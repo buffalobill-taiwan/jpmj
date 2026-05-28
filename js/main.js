@@ -752,39 +752,7 @@ function renderControls() {
     if (game.availableActions.includes('kyuushu')) {
       b.kyuushu.hidden = false;
     }
-    if (game.availableActions.includes('discard')) {
-      b.discard.hidden = false;
-    }
-    if (!p.isRiichi && p.melds.length === 0 && game.wall.getRemainingCount() >= 4) {
-      const rc = [];
-      const seen = new Set();
-      for (let i = 0; i < p.hand.length; i++) {
-        const k = p.hand[i].key();
-        if (seen.has(k)) continue;
-        if (checkTenpai(p.hand.filter((_, j) => j !== i), p.melds)) {
-          rc.push(i);
-          seen.add(k);
-        }
-      }
-      if (rc.length > 0) {
-        b.riichi._candidates = rc;
-        const canAfford = p.score >= 1000;
-        const dblRiichi = !game.firstRoundCallsMade && game.turnCount < 4;
-        const label = game.wouldTriggerSuuchaRiichi(0) ? '立直(流局)' : (dblRiichi ? 'ダブル立直' : '立直');
-
-        if (!canAfford) {
-          b.riichi.textContent = '立直(無点)';
-          b.riichi.className = 'disabled';
-          b.riichi.disabled = true;
-        } else {
-          b.riichi.textContent = label;
-          b.riichi.className = 'primary';
-          b.riichi.disabled = false;
-        }
-        b.riichi.hidden = false;
-      }
-    }
-    if (selectedTile >= 0) {
+    if (game.availableActions.includes('discard') && selectedTile >= 0) {
       const counts = getCounts(p.hand);
       const tile = p.hand[selectedTile];
       const key = tile.key();
@@ -831,7 +799,7 @@ function renderControls() {
       }
     }
 
-    if (selectedTile >= 0) {
+    if (game.availableActions.includes('discard') && selectedTile >= 0) {
       const counts = getCounts(p.hand);
       const key = p.hand[selectedTile].key();
       const tile = p.hand[selectedTile];
