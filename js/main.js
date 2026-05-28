@@ -635,15 +635,18 @@ function setupControls() {
       game.humanCall(b.kan._action);
       continueGame();
     } else {
-      // Hand kan mode - check available options
-      const kans = game.buildAvailableKans();
-      if (kans.length > 1) {
-        showKanModal(kans);
-      } else if (kans.length === 1) {
-        game.executeKan(kans[0]);
-        selectedTile = -1;
-        continueGame();
+      const p = game.players[0];
+      const tile = p.hand[selectedTile];
+      const key = tile.key();
+      const counts = getCounts(p.hand);
+      if ((counts[key] || 0) >= 4) {
+        game.executeKan({ type: 'ankan', tile, meldIndex: -1 });
+      } else {
+        const mi = p.melds.findIndex(m => m.type === 'triplet' && !m.isKan && m.tiles[0].key() === key);
+        game.executeKan({ type: 'kakan', tile, meldIndex: mi });
       }
+      selectedTile = -1;
+      continueGame();
     }
   });
 
@@ -784,7 +787,7 @@ function renderControls() {
       const counts = getCounts(p.hand);
       const tile = p.hand[selectedTile];
       const key = tile.key();
-      if (!p.isRiichi) {
+      if (!p.isRiichi && p.lastDraw) {
         let canAnkan = (counts[key] || 0) >= 4;
         let canKakan = p.melds.some(m => m.type === 'triplet' && !m.isKan && m.tiles[0].key() === key);
         if (canAnkan || canKakan) {
@@ -832,7 +835,7 @@ function renderControls() {
       const key = p.hand[selectedTile].key();
       const tile = p.hand[selectedTile];
 
-      if (!p.isRiichi) {
+      if (!p.isRiichi && p.lastDraw) {
         let canAnkan = (counts[key] || 0) >= 4;
         let canKakan = p.melds.some(m => m.type === 'triplet' && !m.isKan && m.tiles[0].key() === key);
         if (canAnkan || canKakan) {
@@ -847,8 +850,19 @@ function renderControls() {
     }
   } else if (game.availableActions) {
     for (const a of game.availableActions) {
-      if (a === 'tsumo') b.tsumo.hidden = false;
-      else if (a === 'pass') b.passDraw.hidden = false;
+      if (a === 'tsumo') {
+        b.tsumo.className = 'danger';
+        b.tsumo.textContent = 'ツモ';
+        b.tsumo.disabled = false;
+        b.tsumo.hidden = false;
+      } else if (a === 'tsumo-no-yaku') {
+        b.tsumo.className = 'disabled';
+        b.tsumo.textContent = 'ツモ(無役)';
+        b.tsumo.disabled = true;
+        b.tsumo.hidden = false;
+      } else if (a === 'pass') {
+        b.passDraw.hidden = false;
+      }
     }
   }
 }
@@ -918,7 +932,7 @@ function processAutoPlay() {
       game.executeWin(0, 'tsumo', game.players[0].lastDraw);
       return;
     }
-    if (game.availableActions.includes('pass')) {
+    if (game.availableActions.includes('tsumo-no-yaku') || game.availableActions.includes('pass')) {
       game.availableActions = [];
       game.phase = 'discard';
       return;
@@ -949,27 +963,6 @@ function showChiModal() {
     const passAction = game.availableActions.find(a => a.type === 'pass');
     if (passAction) game.humanCall(passAction);
     continueGame();
-  };
-  modal.style.display = 'flex';
-}
-
-function showKanModal(kans) {
-  const modal = document.getElementById('kan-modal');
-  const options = document.getElementById('kan-options');
-  options.innerHTML = '';
-  for (const kan of kans) {
-    const btn = document.createElement('button');
-    btn.textContent = kan.desc;
-    btn.addEventListener('click', () => {
-      modal.style.display = 'none';
-      game.executeKan(kan);
-      selectedTile = -1;
-      continueGame();
-    });
-    options.appendChild(btn);
-  }
-  document.getElementById('kan-cancel').onclick = () => {
-    modal.style.display = 'none';
   };
   modal.style.display = 'flex';
 }

@@ -188,12 +188,13 @@ class Game {
       this.addLog(this.currentPlayer, isHuman ? '摸' : '摸牌', isHuman ? tile.name : '');
       this.turnCount++;
 
-      if (this.checkTsumo(this.currentPlayer)) {
+      const tsumoInfo = this.checkTsumo(this.currentPlayer);
+      if (tsumoInfo.canWin) {
         if (this.players[this.currentPlayer].isHuman) {
-          this.availableActions = ['tsumo', 'pass'];
+          this.availableActions = tsumoInfo.hasYaku ? ['tsumo', 'pass'] : ['tsumo-no-yaku', 'pass'];
           return true;
         }
-        if (this.players[this.currentPlayer].ai.decideTsumo(this, this.currentPlayer)) {
+        if (tsumoInfo.hasYaku && this.players[this.currentPlayer].ai.decideTsumo(this, this.currentPlayer)) {
           this.executeWin(this.currentPlayer, 'tsumo', tile);
           return true;
         }
@@ -265,12 +266,13 @@ class Game {
       p.hand.push(tile);
       p.lastDraw = tile;
 
-      if (this.checkTsumo(this.currentPlayer)) {
+      const tsumoInfo = this.checkTsumo(this.currentPlayer);
+      if (tsumoInfo.canWin) {
         if (this.players[this.currentPlayer].isHuman) {
-          this.availableActions = ['tsumo', 'pass'];
+          this.availableActions = tsumoInfo.hasYaku ? ['tsumo', 'pass'] : ['tsumo-no-yaku', 'pass'];
           return true;
         }
-        if (this.players[this.currentPlayer].ai.decideTsumo(this, this.currentPlayer)) {
+        if (tsumoInfo.hasYaku && this.players[this.currentPlayer].ai.decideTsumo(this, this.currentPlayer)) {
           this.executeWin(this.currentPlayer, 'tsumo', tile);
           return true;
         }
@@ -826,6 +828,7 @@ class Game {
     const p = this.players[playerIdx];
     if (p.isRiichi) return false;
     if (this.phase !== 'discard') return false;
+    if (!p.lastDraw) return false;
 
     const counts = getCounts(p.hand);
 
@@ -956,8 +959,10 @@ class Game {
 
   checkTsumo(playerIdx) {
     const p = this.players[playerIdx];
-    if (!p.lastDraw) return false;
+    if (!p.lastDraw) return { canWin: false, hasYaku: false };
     const handMinusDraw = removeTiles(p.hand, p.lastDraw.key(), 1);
+    const canForm = canFormCompleteHand(handMinusDraw, p.melds, p.lastDraw);
+    if (!canForm) return { canWin: false, hasYaku: false };
     const result = evaluateHand(
       handMinusDraw,
       p.melds,
@@ -965,7 +970,7 @@ class Game {
       'tsumo',
       this.getGameState(playerIdx, p.lastDraw, 'tsumo')
     );
-    return result !== null;
+    return { canWin: true, hasYaku: result !== null };
   }
 
   checkRon(playerIdx, tile) {
