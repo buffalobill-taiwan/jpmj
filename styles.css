@@ -784,9 +784,9 @@ button.auto-btn:hover { background: #5577aa; }
   background: linear-gradient(135deg, #1a3a1a, #0a2a0a);
   border: 2px solid var(--gold);
   border-radius: 12px;
-  padding: 1.5em 2.5em;
+  padding: 1em 2em;
   min-width: 300px;
-  max-width: 450px;
+  max-width: 440px;
   text-align:center;
   box-shadow: 0 0 30px rgba(0,0,0,0.8);
 }
@@ -794,13 +794,13 @@ button.auto-btn:hover { background: #5577aa; }
 #round-result-content h3 {
   color: var(--gold);
   font-size: clamp(1.2rem, 2vw, 1.5rem);
-  margin-bottom: 0.5em;
+  margin-bottom: 0.2em;
 }
 
 #round-result-content .detail {
-  margin: 0.3em 0;
-  font-size: clamp(0.8rem, 1.1vw, 0.95rem);
-  opacity:0.9;
+  margin: 0.1em 0;
+  font-size: clamp(0.75rem, 1vw, 0.85rem);
+  opacity:0.85;
 }
 
 #round-result-content .yaku-list {
@@ -824,15 +824,120 @@ button.auto-btn:hover { background: #5577aa; }
 }
 
 #round-result-content .score-big {
-  font-size: clamp(1.3rem, 2.5vw, 2rem);
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
   color: var(--gold);
+  margin: 0.15em 0;
+}
+
+/* ===== Redesigned Result Sections ===== */
+
+#round-result-content .result-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  flex-wrap: wrap;
+}
+#round-result-content .result-header h3 {
+  margin-bottom: 0;
+}
+
+#round-result-content .section {
   margin: 0.3em 0;
+  padding: 0.15em 0;
+}
+#round-result-content .section-title {
+  color: var(--gold);
+  font-size: clamp(0.65rem, 0.85vw, 0.75rem);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.15em;
+  opacity: 0.7;
+}
+
+#round-result-content .score-section {
+  padding: 0.25em 0;
+}
+#round-result-content .score-breakdown {
+  font-size: clamp(0.6rem, 0.8vw, 0.7rem);
+  opacity: 0.5;
+  margin-top: 0.05em;
+}
+#round-result-content .rank-label {
+  font-size: clamp(0.8rem, 1.1vw, 0.9rem);
+  color: #ffd700;
+  margin-top: 0.1em;
+  font-weight: bold;
+}
+
+#round-result-content .payment-entries {
+  text-align: left;
+  max-width: 340px;
+  margin: 0 auto;
+}
+#round-result-content .payment-row {
+  padding: 0.1em 0;
+}
+#round-result-content .payment-row-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#round-result-content .payment-player {
+  font-size: clamp(0.75rem, 1vw, 0.85rem);
+}
+#round-result-content .payment-suffix {
+  opacity: 0.45;
+  font-size: 0.8em;
+  margin-left: 0.25em;
+}
+#round-result-content .payment-amount {
+  font-weight: bold;
+  font-size: clamp(0.8rem, 1.1vw, 0.9rem);
+  font-variant-numeric: tabular-nums;
+}
+#round-result-content .payment-amount.positive {
+  color: #4cdf50;
+}
+#round-result-content .payment-amount.negative {
+  color: #ff6b6b;
+}
+#round-result-content .payment-amount.zero {
+  color: #555;
+  font-weight: normal;
+}
+#round-result-content .payment-detail {
+  font-size: clamp(0.55rem, 0.75vw, 0.65rem);
+  opacity: 0.4;
+  line-height: 1.2;
+}
+
+#round-result-content .yaku-badge {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: 4px;
+  font-size: clamp(0.65rem, 0.9vw, 0.75rem);
+  font-weight: bold;
+  line-height: 1.4;
+}
+#round-result-content .yaku-badge.yakuman {
+  background: #c0392b;
+  color: #fff;
+}
+
+#round-result-content .result-footer {
+  margin-top: 0.3em;
+  padding-top: 0.2em;
+  border-top: 1px solid rgba(201, 168, 76, 0.15);
+  font-size: 0.8em;
+  opacity: 0.75;
+  line-height: 1.3;
 }
 
 #next-round-btn {
-  margin-top:1em;
-  padding: 0.5em 1.5em;
-  font-size: clamp(0.8rem, 1.1vw, 0.95rem);
+  margin-top:0.5em;
+  padding: 0.4em 1.5em;
+  font-size: clamp(0.75rem, 1vw, 0.85rem);
   border: none;
   border-radius: 6px;
   background: var(--gold);

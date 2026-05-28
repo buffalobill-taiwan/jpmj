@@ -999,132 +999,26 @@ function showRoundResult() {
   const r = game.roundResult;
   const wouldEnd = !r.isRenchan && game.roundNumber + 1 >= game.maxRounds;
 
-  if (game.roundResult.winType === 'suufon_rendai') {
-    const r = game.roundResult;
-    content.innerHTML = `
-      <h3>四風連打 流局</h3>
-      <div class="detail">四家第一打皆為同一風牌</div>
-      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
-      <button id="next-round-btn">次局へ</button>
-    `;
-  } else if (game.roundResult.winType === 'suucha_riichi') {
-    const r = game.roundResult;
-    content.innerHTML = `
-      <h3>四家立直 流局</h3>
-      <div class="detail">四家皆立直</div>
-      <div class="detail">各立直棒歸還</div>
-      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
-      <button id="next-round-btn">次局へ</button>
-    `;
-  } else if (game.roundResult.winType === 'sancha_ron') {
-    const r = game.roundResult;
-    content.innerHTML = `
-      <h3>三家和 流局</h3>
-      <div class="detail">同一張牌被三家榮和</div>
-      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
-      <button id="next-round-btn">次局へ</button>
-    `;
-  } else if (game.roundResult.winType === 'suukantsu_abort') {
-    const r = game.roundResult;
-    content.innerHTML = `
-      <h3>四槓散了 流局</h3>
-      <div class="detail">第四個槓成立</div>
-      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
-      <button id="next-round-btn">次局へ</button>
-    `;
-  } else if (game.roundResult.winType === 'kyuushu_kyuuhai') {
-    const r = game.roundResult;
+  let html;
+
+  if (r.winType === 'suufon_rendai') {
+    html = buildAbortiveResult('四風連打 流局', '四家第一打皆為同一風牌', r);
+  } else if (r.winType === 'suucha_riichi') {
+    html = buildAbortiveResult('四家立直 流局', '四家皆立直<br>各立直棒歸還', r);
+  } else if (r.winType === 'sancha_ron') {
+    html = buildAbortiveResult('三家和 流局', '同一張牌被三家榮和', r);
+  } else if (r.winType === 'suukantsu_abort') {
+    html = buildAbortiveResult('四槓散了 流局', '第四個槓成立', r);
+  } else if (r.winType === 'kyuushu_kyuuhai') {
     const declarer = game.players[r.declarer].name;
-    content.innerHTML = `
-      <h3>九種九牌 流局</h3>
-      <div class="detail">${declarer} 宣告九種九牌</div>
-      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
-      <button id="next-round-btn">次局へ</button>
-    `;
-  } else if (game.roundResult.winType === 'exhaustive') {
-    const r = game.roundResult;
-    const tenpaiStr = r.tenpaiPlayers.length > 0 ? r.tenpaiPlayers.map(i => game.players[i].name).join('、') : '無';
-    const notenStr = r.notenPlayers.length > 0 ? r.notenPlayers.map(i => game.players[i].name).join('、') : '無';
-
-    const paymentLines = [];
-    if (r.tenpaiPlayers.length > 0 && r.notenPlayers.length > 0) {
-      for (const ti of r.tenpaiPlayers) {
-        paymentLines.push(`${game.players[ti].name}: +${r.notenPayment}`);
-      }
-      const paymentPerNoten = 3000 / r.notenPlayers.length;
-      for (const ni of r.notenPlayers) {
-        paymentLines.push(`${game.players[ni].name}: -${paymentPerNoten}`);
-      }
-    }
-
-    let riichiStr = '';
-    if (r.riichiSticks > 0) {
-      riichiStr = `<div class="detail">立直棒 ${r.riichiSticks} 本（保留至次局）</div>`;
-    }
-
-    const honbaStr = r.honba > 0 ? `<div class="detail">本場：${r.honba}</div>` : '';
-    const renchanStr = r.isRenchan ? '連莊（親家聽牌）' : '輪莊（親家不聽）';
-
-    content.innerHTML = `
-      <h3>流局</h3>
-      <div class="detail">聽牌：${tenpaiStr}</div>
-      <div class="detail">不聽：${notenStr}</div>
-      ${paymentLines.map(l => `<div class="detail">${l}</div>`).join('')}
-      ${riichiStr}
-      ${honbaStr}
-      <div class="detail">${renchanStr} → ${wouldEnd ? '遊戲結束' : r.nextRoundLabel}</div>
-      <button id="next-round-btn">${wouldEnd ? '結果を見る' : '次局へ'}</button>
-    `;
+    html = buildAbortiveResult('九種九牌 流局', declarer + ' 宣告九種九牌', r);
+  } else if (r.winType === 'exhaustive') {
+    html = buildExhaustiveResult(r, wouldEnd);
   } else {
-    const winner = game.players[game.roundResult.winner];
-    const r = game.roundResult;
-
-    const rankLabel = getRankLabel(r.totalHan, r.fu, r.isYakuman, r.yaku);
-    let yakuRows = '';
-    for (const y of r.yaku) {
-      const hanStr = y.isYakuman ? '役滿' : y.han + '飜';
-      yakuRows += `<tr><td>${y.name}</td><td>${hanStr}</td></tr>`;
-    }
-    if (r.doraHan > 0) yakuRows += `<tr><td>ドラ</td><td>${r.doraHan}飜</td></tr>`;
-    if (r.uraDoraHan > 0) yakuRows += `<tr><td>裏ドラ</td><td>${r.uraDoraHan}飜</td></tr>`;
-    if (r.totalHan > 0) yakuRows += `<tr class="yaku-total"><td>合計</td><td>${rankLabel || (r.totalHan + '飜 ' + r.fu + '符')}</td></tr>`;
-    const yakuStr = `<table class="yaku-table">${yakuRows}</table>`;
-
-    let scoreStr = '';
-    const paymentLines = [];
-    if (r.payments.type === 'tsumo') {
-      const isDealerWinner = game.players[game.roundResult.winner].seatWind === 1;
-      const dealerIdx = game.dealerIndex;
-      paymentLines.push(`${winner.name}: +${r.payments.total}`);
-      for (let i = 0; i < 4; i++) {
-        if (i === game.roundResult.winner) continue;
-        const amt = i === dealerIdx ? r.payments.dealerPayment : r.payments.childPayment;
-        paymentLines.push(`${game.players[i].name}: -${amt}`);
-      }
-      scoreStr = `ツモ ${r.payments.total}点`;
-    } else {
-      const discPlayer = game.players[game.lastDiscardPlayer];
-      scoreStr = `ロン ${r.payments.discarderPayment}点`;
-      if (game.lastDiscardPlayer >= 0) {
-        paymentLines.push(`${winner.name}: +${r.payments.discarderPayment}`);
-        paymentLines.push(`${discPlayer.name}: -${r.payments.discarderPayment}`);
-      }
-    }
-
-    const extraDetails = [];
-    if (r.honba > 0) extraDetails.push(`本場${r.honba}`);
-    if (r.riichiSticks > 0) extraDetails.push(`立直${r.riichiSticks}`);
-
-    content.innerHTML = `
-      <h3>${winner.name} ${r.winType === 'tsumo' ? 'ツモ' : 'ロン'}！</h3>
-      <div class="score-big">${scoreStr}</div>
-      <div class="yaku-list">${yakuStr}</div>
-      ${paymentLines.map(l => `<div class="detail">${l}</div>`).join('')}
-      ${extraDetails.length > 0 ? `<div class="detail">${extraDetails.join(' ')}</div>` : ''}
-      <button id="next-round-btn">${wouldEnd ? '結果を見る' : '次局へ'}</button>
-    `;
+    html = buildWinResult(r, wouldEnd);
   }
 
+  content.innerHTML = html;
   overlay.style.display = 'flex';
 
   document.getElementById('next-round-btn').addEventListener('click', () => {
@@ -1138,6 +1032,197 @@ function showRoundResult() {
       continueGame();
     }
   });
+}
+
+function buildAbortiveResult(title, desc, r) {
+  return `
+    <h3>${title}</h3>
+    <div class="detail">${desc}</div>
+    <div class="section">
+      <div class="section-title">次局</div>
+      <div class="detail">連莊（本場${r.honba + 1}） → ${r.nextRoundLabel}</div>
+    </div>
+    <button id="next-round-btn">次局へ</button>
+  `;
+}
+
+function buildPaymentEntry(name, absAmount, type, detailText, suffix) {
+  if (type === 'zero') {
+    return `
+      <div class="payment-row zero">
+        <div class="payment-row-main">
+          <span class="payment-player">${name}</span>
+          <span class="payment-amount zero">±0</span>
+        </div>
+      </div>
+    `;
+  }
+  const signChar = type === 'positive' ? '+' : '-';
+  const suffixHtml = suffix ? ' <span class="payment-suffix">' + suffix + '</span>' : '';
+  const detailHtml = detailText ? '<div class="payment-detail">' + detailText + '</div>' : '';
+  return `
+    <div class="payment-row ${type}">
+      <div class="payment-row-main">
+        <span class="payment-player">${name}${suffixHtml}</span>
+        <span class="payment-amount ${type}">${signChar}${absAmount.toLocaleString()}</span>
+      </div>
+      ${detailHtml}
+    </div>
+  `;
+}
+
+function buildExhaustiveResult(r, wouldEnd) {
+  const tenpaiStr = r.tenpaiPlayers.length > 0 ? r.tenpaiPlayers.map(i => game.players[i].name).join('、') : '無';
+  const notenStr = r.notenPlayers.length > 0 ? r.notenPlayers.map(i => game.players[i].name).join('、') : '無';
+
+  let html = '<h3>流局</h3>';
+
+  html += '<div class="section"><div class="section-title">聽牌狀態</div>';
+  html += '<div class="detail">聽牌：' + tenpaiStr + '</div>';
+  html += '<div class="detail">不聽：' + notenStr + '</div>';
+  html += '</div>';
+
+  if (r.tenpaiPlayers.length > 0 && r.notenPlayers.length > 0) {
+    html += '<div class="section"><div class="section-title">支払い明細</div><div class="payment-entries">';
+    const paymentPerNoten = 3000 / r.notenPlayers.length;
+    for (let i = 0; i < r.tenpaiPlayers.length; i++) {
+      const ti = r.tenpaiPlayers[i];
+      const name = (ti === game.dealerIndex ? '🏠 ' : '') + game.players[ti].name;
+      html += buildPaymentEntry(name, r.notenPayment, 'positive', '罰符受取');
+    }
+    for (let i = 0; i < r.notenPlayers.length; i++) {
+      const ni = r.notenPlayers[i];
+      const name = (ni === game.dealerIndex ? '🏠 ' : '') + game.players[ni].name;
+      html += buildPaymentEntry(name, paymentPerNoten, 'negative', '罰符支払い');
+    }
+    html += '</div></div>';
+  }
+
+  html += '<div class="section"><div class="section-title">次局</div>';
+  if (r.riichiSticks > 0) {
+    html += '<div class="detail">立直棒 ' + r.riichiSticks + ' 本（保留至次局）</div>';
+  }
+  if (r.honba > 0) {
+    html += '<div class="detail">本場 ' + r.honba + '</div>';
+  }
+  const renchanStr = r.isRenchan ? '連莊（親家聽牌）' : '輪莊（親家不聽）';
+  html += '<div class="detail">' + renchanStr + ' → ' + (wouldEnd ? '遊戲結束' : r.nextRoundLabel) + '</div>';
+  html += '</div>';
+
+  html += '<button id="next-round-btn">' + (wouldEnd ? '結果を見る' : '次局へ') + '</button>';
+  return html;
+}
+
+function buildWinResult(r, wouldEnd) {
+  const winner = game.players[r.winner];
+  const dealerIdx = game.dealerIndex;
+  const isDealerWinner = r.winner === dealerIdx;
+  const dealerLabel = isDealerWinner ? '🏠 ' : '';
+
+  let badgeHtml = '';
+  if (r.isYakuman) {
+    let count = 0;
+    for (let i = 0; i < r.yaku.length; i++) {
+      if (r.yaku[i].isYakuman) count++;
+    }
+    badgeHtml = '<span class="yaku-badge yakuman">' + (count >= 2 ? count + '倍役満' : '役満') + '</span>';
+  }
+
+  let html = '<div class="result-header"><h3>' + dealerLabel + winner.name + ' ' + (r.winType === 'tsumo' ? 'ツモ' : 'ロン') + '！</h3>' + badgeHtml + '</div>';
+
+  const rankLabel = getRankLabel(r.totalHan, r.fu, r.isYakuman, r.yaku);
+  let yakuRows = '';
+  for (let i = 0; i < r.yaku.length; i++) {
+    const y = r.yaku[i];
+    const hanStr = y.isYakuman ? '役滿' : y.han + '飜';
+    yakuRows += '<tr><td>' + y.name + '</td><td>' + hanStr + '</td></tr>';
+  }
+  if (r.doraHan > 0) yakuRows += '<tr><td>ドラ</td><td>' + r.doraHan + '飜</td></tr>';
+  if (r.uraDoraHan > 0) yakuRows += '<tr><td>裏ドラ</td><td>' + r.uraDoraHan + '飜</td></tr>';
+  if (r.totalHan > 0) yakuRows += '<tr class="yaku-total"><td>合計</td><td>' + (rankLabel || (r.totalHan + '飜 ' + r.fu + '符')) + '</td></tr>';
+
+  html += '<div class="section"><div class="section-title">役種</div><table class="yaku-table">' + yakuRows + '</table></div>';
+
+  const honbaBonus = r.honba * 300;
+  const riichiBonus = r.riichiSticks * 1000;
+
+  if (r.payments.type === 'tsumo') {
+    const basePoints = r.payments.total;
+    const breakdownParts = ['基礎' + basePoints.toLocaleString()];
+    if (honbaBonus > 0) breakdownParts.push('本場' + honbaBonus);
+    if (riichiBonus > 0) breakdownParts.push('立直' + riichiBonus);
+    const totalPoints = basePoints + honbaBonus + riichiBonus;
+
+    html += '<div class="section score-section">';
+    html += '<div class="score-big">' + totalPoints.toLocaleString() + '点</div>';
+    html += '<div class="score-breakdown">（' + breakdownParts.join(' + ') + '）</div>';
+    if (rankLabel) html += '<div class="rank-label">' + rankLabel + '</div>';
+    html += '</div>';
+
+    html += '<div class="section"><div class="section-title">支払い明細</div><div class="payment-entries">';
+
+    const winnerDetails = ['基礎+' + basePoints.toLocaleString()];
+    if (honbaBonus > 0) winnerDetails.push('本場+' + honbaBonus);
+    if (riichiBonus > 0) winnerDetails.push('立直+' + riichiBonus);
+    html += buildPaymentEntry(dealerLabel + winner.name, totalPoints, 'positive', winnerDetails.join(' '), '和了');
+
+    for (let i = 0; i < 4; i++) {
+      if (i === r.winner) continue;
+      const basePayment = i === dealerIdx ? r.payments.dealerPayment : r.payments.childPayment;
+      const honbaPayment = r.honba * 100;
+      const totalPayment = basePayment + honbaPayment;
+      const name = (i === dealerIdx ? '🏠 ' : '') + game.players[i].name;
+      const details = ['基礎-' + basePayment.toLocaleString()];
+      if (honbaPayment > 0) details.push('本場-' + honbaPayment);
+      html += buildPaymentEntry(name, totalPayment, 'negative', details.join(' '));
+    }
+
+    html += '</div></div>';
+  } else {
+    const basePoints = r.payments.discarderPayment;
+    const breakdownParts = ['基礎' + basePoints.toLocaleString()];
+    if (honbaBonus > 0) breakdownParts.push('本場' + honbaBonus);
+    if (riichiBonus > 0) breakdownParts.push('立直' + riichiBonus);
+    const totalPoints = basePoints + honbaBonus + riichiBonus;
+
+    html += '<div class="section score-section">';
+    html += '<div class="score-big">' + totalPoints.toLocaleString() + '点</div>';
+    html += '<div class="score-breakdown">（' + breakdownParts.join(' + ') + '）</div>';
+    if (rankLabel) html += '<div class="rank-label">' + rankLabel + '</div>';
+    html += '</div>';
+
+    html += '<div class="section"><div class="section-title">支払い明細</div><div class="payment-entries">';
+
+    const winnerDetails = ['基礎+' + basePoints.toLocaleString()];
+    if (honbaBonus > 0) winnerDetails.push('本場+' + honbaBonus);
+    if (riichiBonus > 0) winnerDetails.push('立直+' + riichiBonus);
+    html += buildPaymentEntry(dealerLabel + winner.name, totalPoints, 'positive', winnerDetails.join(' '), '和了');
+
+    const discPlayer = game.players[game.lastDiscardPlayer];
+    const discName = (game.lastDiscardPlayer === dealerIdx ? '🏠 ' : '') + discPlayer.name;
+    const discTotal = basePoints + honbaBonus;
+    const discDetails = ['基礎-' + basePoints.toLocaleString()];
+    if (honbaBonus > 0) discDetails.push('本場-' + honbaBonus);
+    html += buildPaymentEntry(discName, discTotal, 'negative', discDetails.join(' '), '放槍');
+
+    // 不列出 ±0 的玩家
+
+    html += '</div></div>';
+  }
+
+  html += '<div class="result-footer">';
+  const extraParts = [];
+  if (r.honba > 0) extraParts.push('本場' + r.honba);
+  if (r.riichiSticks > 0) extraParts.push('立直棒' + r.riichiSticks + '本');
+  if (extraParts.length > 0) {
+    html += '<div class="detail">' + extraParts.join(' ') + '</div>';
+  }
+  const renchanStr = r.isRenchan ? '連莊' : '輪莊';
+  html += '<div class="detail">' + renchanStr + ' → ' + (wouldEnd ? '遊戲結束' : r.nextRoundLabel) + '</div>';
+  html += '</div>';
+
+  html += '<button id="next-round-btn">' + (wouldEnd ? '結果を見る' : '次局へ') + '</button>';
+  return html;
 }
 
 // ===== Final Result =====
