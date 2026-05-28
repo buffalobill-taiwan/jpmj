@@ -1041,12 +1041,11 @@ function showRoundResult() {
 
   document.getElementById('next-round-btn').addEventListener('click', () => {
     overlay.style.display = 'none';
-
-    if (wouldEnd || game.checkGameOver()) {
+    game.endRound();
+    selectedTile = -1;
+    if (game.gameOver) {
       showFinalResult();
     } else {
-      game.endRound();
-      selectedTile = -1;
       continueGame();
     }
   });
