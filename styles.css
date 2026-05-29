@@ -1149,7 +1149,7 @@ button.auto-btn:hover { background: #5577aa; }
   #player-hand .tile-char { font-size: clamp(1.2rem, 3vw, 1.8rem); }
   #player-melds .tile-char { font-size: clamp(0.85rem, 2vw, 1.2rem); }
   #opponent-top { top: 0; }
-  #center-info { top: 35%; }
+  #center-info { top: 50%; }
   #player-info { gap: 0.2em; margin-bottom: 0; }
   #player-info .player-name,
   #player-info .player-score { font-size: clamp(0.55rem, 1.3vw, 0.75rem); }
@@ -1162,4 +1162,10 @@ button.auto-btn:hover { background: #5577aa; }
   #opponent-right .opponent-melds .tile-char { margin-bottom: -8px; }
   #opponent-left .opponent-discards .tile-char,
   #opponent-right .opponent-discards .tile-char { margin-bottom: -4px; }
+  #round-result-content { max-height: 85vh; overflow-y: auto; padding: 0.8em; scrollbar-width: thin; }
+  #round-result-content .score-big { font-size: clamp(1.2rem, 2.5vw, 1.6rem); }
+  #round-result-content .detail,
+  #round-result-content .yaku-item,
+  #round-result-content .payment-player,
+  #round-result-content .payment-amount { font-size: clamp(0.6rem, 1.5vw, 0.75rem); }
 }
