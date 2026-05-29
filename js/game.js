@@ -907,12 +907,6 @@ class Game {
               m.tiles.push(tile);
               m.isKan = true;
               this.lastActionWasKan = true;
-              this.wall.addDoraIndicator();
-              this.kanDeclarers.push(playerIdx);
-              if (this.kanDeclarers.length >= 4 && new Set(this.kanDeclarers).size > 1) {
-                this.handleSuukantsuAbort();
-                return true;
-              }
               this.addLog(playerIdx, '加槓', tile.name);
 
               // 搶槓檢查
@@ -933,6 +927,13 @@ class Game {
                 this.availableCalls = chankanCalls;
                 this.availableActions = [];
                 this.phase = 'call_pending';
+                return true;
+              }
+
+              this.wall.addDoraIndicator();
+              this.kanDeclarers.push(playerIdx);
+              if (this.kanDeclarers.length >= 4 && new Set(this.kanDeclarers).size > 1) {
+                this.handleSuukantsuAbort();
                 return true;
               }
 
