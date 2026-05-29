@@ -38,6 +38,7 @@ class Game {
     this.sanchaRonCandidates = [];
     this.sanchaRonPending = false;
     this.roundCount = 0;
+    this.renchanCount = 0;
     this.ryuukyokuCount = 0;
     this.log = [];
     this.logGroup = 0;
@@ -1308,10 +1309,12 @@ class Game {
         this.roundNumber++;
       } else {
         this.honba++;
+        this.renchanCount++;
       }
     } else {
       if (this.roundResult.winner === this.dealerIndex) {
         this.honba++;
+        this.renchanCount++;
       } else {
         this.dealerIndex = (this.dealerIndex + 1) % 4;
         this.honba = 0;

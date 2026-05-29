@@ -1259,7 +1259,7 @@ function showFinalResult() {
     html += `<tr${cls}><td>${s.rank}位</td><td>${s.name}</td><td>${s.score}</td><td>${s.tsumo}</td><td>${s.ron}</td><td>${s.dealtIn}</td></tr>`;
   }
   html += '</tbody></table>';
-  html += `<div class="result-summary">總局數 ${game.roundCount} ／ 流局 ${game.ryuukyokuCount}</div>`;
+  html += `<div class="result-summary">連莊 ${game.renchanCount} ／ 總局數 ${game.roundCount} ／ 流局 ${game.ryuukyokuCount}</div>`;
   statsArea.innerHTML = html;
 
   document.getElementById('back-btn').addEventListener('click', () => {
