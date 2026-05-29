@@ -119,32 +119,51 @@ function setupLogDrag() {
   const handle = document.getElementById('log-drag-handle');
   let dragging = false, startX, startY, startLeft, startTop;
 
-  handle.addEventListener('mousedown', (e) => {
+  function dragStart(cx, cy) {
     dragging = true;
     const rect = log.getBoundingClientRect();
-    startX = e.clientX;
-    startY = e.clientY;
+    startX = cx;
+    startY = cy;
     startLeft = rect.left;
     startTop = rect.top;
-    e.preventDefault();
-  });
+  }
 
-  document.addEventListener('mousemove', (e) => {
+  function dragMove(cx, cy) {
     if (!dragging) return;
-    log.style.left = (startLeft + e.clientX - startX) + 'px';
-    log.style.top = (startTop + e.clientY - startY) + 'px';
+    log.style.left = (startLeft + cx - startX) + 'px';
+    log.style.top = (startTop + cy - startY) + 'px';
     log.style.right = 'auto';
     log.style.bottom = 'auto';
-  });
+  }
 
-  document.addEventListener('mouseup', () => {
+  function dragEnd() {
     dragging = false;
+  }
+
+  handle.addEventListener('mousedown', (e) => {
+    dragStart(e.clientX, e.clientY);
+    e.preventDefault();
   });
+  document.addEventListener('mousemove', (e) => dragMove(e.clientX, e.clientY));
+  document.addEventListener('mouseup', dragEnd);
+
+  handle.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    dragStart(t.clientX, t.clientY);
+  });
+  document.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    dragMove(t.clientX, t.clientY);
+    e.preventDefault();
+  });
+  document.addEventListener('touchend', dragEnd);
 }
 
 // ===== Title Screen =====
 
 function renderTitleScreen() {
+  document.body.classList.remove('game-active');
   currentScreen = SCREEN.TITLE;
   document.getElementById('title-screen').style.display = 'flex';
   document.getElementById('game-screen').style.display = 'none';
@@ -237,6 +256,7 @@ function startGame() {
   });
   game.initGame();
   currentScreen = SCREEN.GAME;
+  document.body.classList.add('game-active');
   document.getElementById('title-screen').style.display = 'none';
   document.getElementById('game-screen').style.display = 'block';
   selectedTile = -1;

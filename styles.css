@@ -703,6 +703,26 @@ body.font-mono {
 button.auto-btn { background: #446688; border-color: #335577; color:var(--text-light); position:fixed; bottom:1rem; left:1rem; z-index:50; }
 button.auto-btn:hover { background: #5577aa; }
 
+/* ===== Rotation Overlay ===== */
+
+#rotation-message {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 100;
+  align-items: center; justify-content: center;
+  background: var(--table-dark);
+  color: var(--gold);
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  text-align: center;
+  padding: 2em;
+  line-height: 1.6;
+}
+
+@media (max-width: 520px) and (orientation: portrait) {
+  body.game-active #rotation-message { display: flex; }
+  body.game-active #table { display: none !important; }
+}
+
 /* ===== Result Screen ===== */
 
 #result-screen {
@@ -1103,4 +1123,43 @@ button.auto-btn:hover { background: #5577aa; }
 @media (max-width: 420px) {
   #result-content, #round-result-content { min-width: 90vw; padding: 1em; }
   #chi-modal-content, #riichi-modal-content { min-width: 85vw; }
+}
+
+/* Short viewport (mobile landscape, small screens) */
+@media (max-height: 500px) {
+  #title-screen h1 { font-size: clamp(1.4rem, 5vw, 2rem); }
+  .title-tiles { font-size: clamp(0.9rem, 2.5vw, 1.3rem); }
+  .option-group { margin-bottom: 0.4em; }
+  .option-group label { font-size: clamp(0.65rem, 1.5vw, 0.85rem); margin-bottom: 0.2em; }
+  .option-btn { padding: 0.2em 0.6em; font-size: clamp(0.6rem, 1.5vw, 0.8rem); }
+  .difficulty-select { padding: 0.15em 0.4em; font-size: clamp(0.6rem, 1.5vw, 0.8rem); }
+  .option-row { gap: 0.4em; }
+  #start-btn { padding: 0.35em 1.5em; font-size: clamp(0.8rem, 2vw, 1rem); margin-top: 0.2em; }
+}
+
+/* Mobile landscape tweaks */
+@media (max-height: 500px) and (orientation: landscape) {
+  #player-discards { grid-template-columns: repeat(12, 1.4em); grid-auto-rows: 1.4em; }
+  #player-discards .tile-char { font-size: clamp(0.9rem, 2.2vw, 1.3rem); }
+  .opponent-discards { grid-template-columns: repeat(12, 1.1em); grid-auto-rows: 1.1em; }
+  #opponent-right .opponent-discards,
+  #opponent-left .opponent-discards { grid-template-columns: repeat(2, 1.1em); grid-template-rows: repeat(12, 1.1em); }
+  .opponent-area .tile-char { font-size: clamp(0.8rem, 1.8vw, 1.2rem); }
+  #player-area { padding-right: 0; padding-bottom: 0.1em; }
+  #player-hand .tile-char { font-size: clamp(1.2rem, 3vw, 1.8rem); }
+  #player-melds .tile-char { font-size: clamp(0.85rem, 2vw, 1.2rem); }
+  #opponent-top { top: 0; }
+  #center-info { top: 35%; }
+  #player-info { gap: 0.2em; margin-bottom: 0; }
+  #player-info .player-name,
+  #player-info .player-score { font-size: clamp(0.55rem, 1.3vw, 0.75rem); }
+  #dora-area { margin-top: 1px; }
+  #dora-area .tile-char { font-size: clamp(0.6rem, 1.5vw, 0.9rem); }
+  #dora-area .tile-back { font-size: clamp(0.6rem, 1.5vw, 0.9rem); }
+  #opponent-left .tiles-row .tile-char,
+  #opponent-right .tiles-row .tile-char { margin-bottom: -8px; }
+  #opponent-left .opponent-melds .tile-char,
+  #opponent-right .opponent-melds .tile-char { margin-bottom: -8px; }
+  #opponent-left .opponent-discards .tile-char,
+  #opponent-right .opponent-discards .tile-char { margin-bottom: -4px; }
 }
