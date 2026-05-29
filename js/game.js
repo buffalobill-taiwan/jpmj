@@ -187,7 +187,7 @@ class Game {
       p.hand.push(tile);
       p.hand = Tile.sortTiles(p.hand);
       p.lastDraw = tile;
-      p.isTempFuriten = false;
+      if (!p.isRiichi) p.isTempFuriten = false;
       const isHuman = this.players[this.currentPlayer].isHuman;
       this.addLog(this.currentPlayer, isHuman ? '摸' : '摸牌', isHuman ? tile.name : '');
       this.turnCount++;
