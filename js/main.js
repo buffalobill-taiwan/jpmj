@@ -329,10 +329,8 @@ function updateTileChars(container, tiles, count, posFn) {
 function renderCenterInfo() {
   const ci = document.getElementById('center-info');
   let rLabel = game.roundLabel;
-  const extras = [];
-  if (game.honba > 0) extras.push(`連莊 本場${game.honba}`);
-  if (game.riichiSticks > 0) extras.push(`立直${game.riichiSticks}`);
-  if (extras.length > 0) rLabel += ' ' + extras.join(' ');
+  if (game.honba > 0) rLabel += `${game.honba}本場`;
+  if (game.riichiSticks > 0) rLabel += ` 立直${game.riichiSticks}`;
   ci.querySelector('.round-label').textContent = rLabel;
 
   const wallCount = game.wall.getRemainingCount();
